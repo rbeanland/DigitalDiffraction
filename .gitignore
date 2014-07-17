@@ -1,0 +1,14 @@
+x64/
+*.sublime-project
+*.sublime-workspace
+
+*.sdf
+*.vcproj
+*.user
+*.opensdf
+*.suo
+*.bat
+*.dmp
+res/
+ipch/
+_UpgradeReport_Files/
