@@ -14,27 +14,33 @@ void Calibrate::DoCalibration()
 	DigitalMicrograph::TagGroup Persistent; //doesn't know which is default
 	if(!ExtraGatan::CheckCamera()){DigitalMicrograph::OkDialog("No Camera Detected\nPlease ensure the camera is inserted"); return;}
 	Persistent = DigitalMicrograph::GetPersistentTagGroup();
+	Camb = 2672;
+	Camr = 2688;
 	_b = Camb/binning;
 	_r = Camr/binning;
 	float spot = ExtraGatan::EMGetSpotSize() + 1;
 	float mag = ExtraGatan::EMGetMagnification();
 	double CamL = ExtraGatan::EMGetCameraLength();
+	DigitalMicrograph::Result("CamL = " + boost::lexical_cast<std::string>(CamL)+"\n");
 	float alpha = 3;
 	if (!DigitalMicrograph::GetNumber("Alpha?", alpha, &alpha))
 	{
-		return; //maybe add error handler?? Maybe throw as dialogue box??
+		return; //maybe add error handler??
 	}
 	std::string Tag_Path;
 	Tag_Path = "DigitalDiffraction:Alpha="+boost::lexical_cast<std::string>(alpha)+":Binning="+boost::lexical_cast<std::string>(binning)+":CamL="+boost::lexical_cast<std::string>(CamL)+"mm:";
 	long f=0;
-	char date[100], time[100];
+	char date[11], time[6];
 	std::string datestring, timestring;
-	DigitalMicrograph::GetDate(f,date,100);
-	DigitalMicrograph::GetTime(f,time,100);
+	DigitalMicrograph::GetDate(f,date,11);
+	DigitalMicrograph::GetTime(f,time,6);
 	int i;
-	for(i=0; i<100; i++)
+	for(i=0; i<10; i++)//back to 11 if not
 	{
 		datestring += date[i];
+	}
+	for (i = 0; i < 5; i++)
+	{
 		timestring += time[i];
 	}
 	std::string datetimestring=datestring+"_"+timestring;
@@ -88,12 +94,14 @@ void Calibrate::DoCalibration()
 		long rX, rY; // don't think need????
 		Rr=ExtraGatan::DiscSize(img1, &rX, &rY, 2);
 		DigitalMicrograph::TagGroupSetTagAsFloat(Persistent, (Tag_Path+"Disc Radius").c_str(),Rr);
+		DigitalMicrograph::Result("At get radius of CBED disc, radius Rr =" + boost::lexical_cast<std::string>(Rr)+"\n");
 
 
 
 		//Set magnitude of tilt
 		//dTilt gives diffraction pattern shift 1/4 of camera height
 		//[T1X,T1Y] is the beam tilt in pixels [X,Y] per x DAC
+		DigitalMicrograph::Result("Calling TiltSize...\n");
 		dTilt=ExtraGatan::Tiltsize(40000/CamL, &T1X, &T1Y, &T2X, &T2Y, binning, &img1, &imgCC, &img0, expo, sleeptime, _b);
 	
 		detT = T1X*T2Y - T2X*T1Y; // determinant
@@ -112,9 +120,11 @@ void Calibrate::DoCalibration()
 
 		//Calibrate beam shift - assume it's linear so a single measurement of x and y DAC shift is fine
 		//[Sh1X,Sh1Y] is the beam shift in pixels [X,Y] per x DAC
+		DigitalMicrograph::Result("Calling ShiftSize...\n");
 		dShift = ExtraGatan::Shiftsize(20.0, &Sh1X, &Sh1Y, &Sh2X, &Sh2Y, binning, expo, sleeptime, _b);
 		detSh = Sh1X*Sh2Y-Sh2X*Sh1Y;//determinant
 		xShpX = Sh2Y/detSh;//EMSetBeamShift(xShpX,xShpY) shifts the beam 1 x-pixel
+		DigitalMicrograph::Result("xShpX = " + boost::lexical_cast<std::string>(xShpX)+"\n");
 		xShpY = -Sh1Y/detSh;
 		yShpX = -Sh2X/detSh;//EMSetBeamShift(yShpX,yShpY) shifts the beam 1 y-pixel
 		yShpY = Sh1X/detSh;
@@ -126,8 +136,11 @@ void Calibrate::DoCalibration()
 		DigitalMicrograph::TagGroupSetTagAsFloat(Persistent, (Tag_Path+"yShpX").c_str(), yShpX);
 		DigitalMicrograph::TagGroupSetTagAsFloat(Persistent, (Tag_Path+"yShpY").c_str(), yShpY);
 
+		DigitalMicrograph::Result("Saving xShpX etc to persistent tags...\n");
+
 		long X0, Y0;
 		//Centre beam shift
+		DigitalMicrograph::Result("at line 141...\n");
 		img1 = ExtraGatan::Acquire(img1, binning, &quit, &success, expo);
 		img1.DataChanged();
 
@@ -137,8 +150,9 @@ void Calibrate::DoCalibration()
 		ExtraGatan::PixelPos(img1, maxval, &X0, &Y0, false);
 		//////
 
-
+		DigitalMicrograph::Result("At EMBeamCentre, ln151...\n");
 		ExtraGatan::EMBeamCentre(Tag_Path, img1); ///removed in previous version???
+		DigitalMicrograph::Sleep(sleeptime);
 
 		ExtraGatan::EMGetBeamShift(&ShiftX0, &ShiftY0);
 		DigitalMicrograph::Result("Centred beam shift : "+boost::lexical_cast<std::string>(ShiftX0)+","+boost::lexical_cast<std::string>(ShiftY0)+"\n");
@@ -153,7 +167,7 @@ void Calibrate::DoCalibration()
 		img1.DataChanged();
 		img0 = DigitalMicrograph::ImageClone(img1); // reference image
 		img0.DataChanged();
-	
+		DigitalMicrograph::Result("Set up reference image...\n");
 		/////////////////////////
 		//number of points +/- to measure
 
@@ -165,6 +179,7 @@ void Calibrate::DoCalibration()
 
 
 		//set up arrays holding shift calibration
+		DigitalMicrograph::Result("Making Xsh & Ysh...\n");
 		Xsh = DigitalMicrograph::RealImage("X-Shift with tilt",4,(2*nTilts+1),(2*nTilts)+1);
 		Ysh = DigitalMicrograph::RealImage("Y-shift with tilt",4,(2*nTilts)+1,(2*nTilts)+1);
 		//TiltCal = DigitalMicrograph::NewImage("Sift calibration", data_type, (2*nTilts)+1, (2*nTilts)+1, 2);
@@ -190,6 +205,8 @@ void Calibrate::DoCalibration()
 		tIncX = (_r/(2*(float)nTilts))*0.8; //max beam tilt is 80% of diffraction pattern width from centre
 		tIncY = (_b/(2*(float)nTilts))*0.8; //max beam tilt is 80% of diffraction pattern height from centre
 
+		DigitalMicrograph::Result("tIncX = " + boost::lexical_cast<std::string>(tIncX)+", tIncY = " + boost::lexical_cast<std::string>(tIncY)+"\n");
+
 		tX = TiltX0 + (long)((ii*xTpX + jj*yTpX)*tIncX); //may need to chenge casting/types
 		tY = TiltY0 + (long)((ii*xTpY + jj*yTpY)*tIncY);
 		//tX = TiltX0 + (ii*xTpX + jj*yTpX)*tIncX;
@@ -207,7 +224,7 @@ void Calibrate::DoCalibration()
 		mark = DigitalMicrograph::RealImage("Scan", 4, img1_X, img1_Y);
 		marklocker.lock(mark);
 		markpix = (float*) marklocker.get();
-	
+		DigitalMicrograph::Result("Made mark image...\n");
 		DigitalMicrograph::ImageGetOrCreateImageDocument(mark).ShowAtPosition(15,30);
 
 		int m, v;
@@ -242,7 +259,7 @@ void Calibrate::DoCalibration()
 				}
 			}
 			mark.DataChanged();
-
+			DigitalMicrograph::Result("May produce wrong image here... ln260\n");
 			dx = x - X0; //may be wrong
 			dy = y - Y0; //may be wrong
 
@@ -258,7 +275,7 @@ void Calibrate::DoCalibration()
 
 		//XSh and YSh are temporary images/ intermediate images that are put together
 		//into the TiltCal image, a 2d image
-
+		DigitalMicrograph::Result("Making tiltcal image...\n");
 		for(i=0; i<(((2*nTilts)+1)*((2*nTilts)+1)); i++)
 		{
 			TiltCalPix[i] = XshPix[i];
@@ -269,6 +286,7 @@ void Calibrate::DoCalibration()
 		//Add tags & save Calibration (stack of 2 images)
 		DigitalMicrograph::TagGroup TiltCalTags;
 		TiltCalTags = DigitalMicrograph::ImageGetTagGroup(TiltCal);
+		DigitalMicrograph::Result("Saving tags to TiltCal image...\n");
 	
 		DigitalMicrograph::TagGroupSetTagAsString(TiltCalTags,"Info:Date", datetimestring);
 		DigitalMicrograph::TagGroupSetTagAsFloat(TiltCalTags,"Info:Camera Length", CamL);
@@ -276,10 +294,12 @@ void Calibrate::DoCalibration()
 		DigitalMicrograph::TagGroupSetTagAsFloat(TiltCalTags,"Info:Alpha", alpha);
 		DigitalMicrograph::TagGroupSetTagAsFloat(TiltCalTags,"Info:Spot size", spot);
 		DigitalMicrograph::TagGroupSetTagAsFloat(TiltCalTags,"Info:Disc Radius",Rr);
+
 		DigitalMicrograph::TagGroupSetTagAsFloat(TiltCalTags,"Tilts:xTpX",xTpX);
 		DigitalMicrograph::TagGroupSetTagAsFloat(TiltCalTags,"Tilts:xTpY",xTpY);
 		DigitalMicrograph::TagGroupSetTagAsFloat(TiltCalTags,"Tilts:yTpX",yTpX);
 		DigitalMicrograph::TagGroupSetTagAsFloat(TiltCalTags,"Tilts:yTpY",yTpY);
+		
 		DigitalMicrograph::TagGroupSetTagAsFloat(TiltCalTags,"Shifts:xShpX",xShpX);
 		DigitalMicrograph::TagGroupSetTagAsFloat(TiltCalTags,"Shifts:xShpY",xShpY);
 		DigitalMicrograph::TagGroupSetTagAsFloat(TiltCalTags,"Shifts:yShpX",yShpX);
@@ -302,6 +322,9 @@ void Calibrate::DoCalibration()
 	}
 	catch(...)
 	{ // We're here because an error happened, stop the acquisition
+		//ExtraGatan::ABSTilt(TiltX0, TiltY0);
+		//DigitalMicrograph::Result("Tilts reset to saved values\n");
+		//ExtraGatan::ResetBeam();
 		DigitalMicrograph::OkDialog("An unexpected error has occured during calibration!");
 		return;
 	}

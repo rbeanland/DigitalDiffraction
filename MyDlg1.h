@@ -9,8 +9,12 @@
 #include "clFourier.h"
 #include "WorkerClass.h"
 #include "DED_TiltCalibration.h"
+#include "DED_Collect.h"
+
 
 class Calibrate;
+class Collect;
+
 
 // MyDlg1 dialog
 class MyDlg1 : public CDialog, public WorkerClass
@@ -46,7 +50,12 @@ public:
 	int binning_input;
 
 	Calibrate* DEDCalibrate;
+	Collect* DEDCollect;
+	
+	
+	
 	bool tiltcalibration;
+	bool collect;
 
 	// This functions is part of the WorkerClass.
 	// If you call Start() it will in turn run this function in a seperate Worker Thread, thus not locking up the UI.
@@ -56,4 +65,7 @@ private:
 	CString str_binning_input;
 	CString str_expo_input;
 	CString str_sleeptime_input;
+public:
+	afx_msg void OnBnClickedButton2();
+	afx_msg void OnBnClickedButton3();
 };

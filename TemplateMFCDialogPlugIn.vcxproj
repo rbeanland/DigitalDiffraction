@@ -93,8 +93,8 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ReleaseNoOpt|x64'">false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Boost\include\boost-1_55;C:\Program Files (x86)\AMD APP SDK\2.9\include;C:\ProgramData\Gatan\DMSDK\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\AMD APP SDK\2.9\lib\x86_64;C:\ProgramData\Gatan\DMSDK\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files %28x86%29\AMD\clAmdFft\include;C:\C++\boost_1_55_0;C:\Program Files (x86)\AMD APP SDK\2.9\include;C:\ProgramData\Gatan\DMSDK\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\AMD\clAmdFft\lib64\import;C:\Program Files %28x86%29\AMD APP SDK\2.9\lib\x86_64;C:\ProgramData\Gatan\DMSDK\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <BuildLog>
@@ -182,7 +182,8 @@
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <OmitFramePointers>false</OmitFramePointers>
-      <AdditionalIncludeDirectories>..\include\;$(BOOST_1_38_0);C:\FFTW64;C:\Program Files (x86)\AMD APP\include;C:\Program Files (x86)\AMD\clAmdFft\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WIN64;_AFXEXT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>false</MinimalRebuild>
@@ -211,9 +212,10 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>DMPlugInBasic.lib;Foundation.lib;OpenCL.lib;clAmdFft.Runtime.lib;clFFT.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DMPlugInBasic.lib;Foundation.lib;OpenCL.lib;clAmdFft.Runtime.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>..\lib\$(Platform);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v4.2\lib\x64;C:\FFTW64;C:\Program Files (x86)\AMD APP\lib\x86_64;C:\Program Files (x86)\AMD\clAmdFft\lib64\import;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -376,6 +378,8 @@
     <ClCompile Include="amsEdit.cpp" />
     <ClCompile Include="clFourier.cpp" />
     <ClCompile Include="clKernel.cpp" />
+    <ClCompile Include="DED_Collect.cpp" />
+    <ClCompile Include="DED_Process.cpp" />
     <ClCompile Include="DED_TiltCalibration.cpp" />
     <ClCompile Include="DMDialog.cpp" />
     <ClCompile Include="ExtraGatan.cpp" />
@@ -401,9 +405,10 @@
     <ClInclude Include="clFourier.h" />
     <ClInclude Include="clKernel.h" />
     <ClInclude Include="CLKernels.h" />
-    <ClInclude Include="D-ED_Collect.h" />
+    <ClInclude Include="DED_Collect.h" />
     <ClInclude Include="DED_TiltCalibration.h" />
     <ClInclude Include="ExtraGatan.h" />
+    <ClInclude Include="DED_Process.h" />
     <ClInclude Include="MyTabCtrl.h" />
     <ClInclude Include="amsEdit.h" />
     <ClInclude Include="DMDialog.h" />

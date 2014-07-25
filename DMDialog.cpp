@@ -6,6 +6,7 @@
 #include "stdafx.h"
 #include "TemplateMFCDialogPlugIn.h"
 #include "DMPluginStubs.h"
+#include "DMDialog.h"
 
 
 IMPLEMENT_DYNCREATE(CDMDialog, CDialog)
@@ -30,6 +31,7 @@ void CDMDialog::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CDMDialog, CDialog)
 	ON_WM_PAINT()
 	ON_WM_ERASEBKGND()
+	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB1, &CDMDialog::OnTcnSelchangeTab1)
 END_MESSAGE_MAP()
 
 
@@ -50,8 +52,8 @@ BOOL CDMDialog::OnInitDialog()
 	 m_tbCtrl.InitDialogs();
 	
 	 // Tab Names
-	 m_tbCtrl.InsertItem(0,"Tab One");
-	 m_tbCtrl.InsertItem(1,"Tab Two");
+	 m_tbCtrl.InsertItem(0,"Acquisition");
+	 m_tbCtrl.InsertItem(1,"Processing");
 
 	 m_tbCtrl.ActivateTabDialogs();
 
@@ -90,3 +92,10 @@ std::ostream& operator<<(std::ostream& os, const CRect& rect)
 	return os << "Rect=(" << rect.TopLeft().x << ", " << rect.TopLeft().y << ", " << rect.BottomRight().x << ", " << rect.BottomRight().y << ")";
 }
 
+
+
+void CDMDialog::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	// TODO: Add your control notification handler code here
+	*pResult = 0;
+}

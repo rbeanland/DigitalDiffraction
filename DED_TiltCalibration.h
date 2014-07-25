@@ -11,18 +11,18 @@
 	 //** Richard Beanland r.beanland@warwick.ac.uk **\\
 	//**    Joel C Forster j.c.forster@warwick.ac.uk **\\
    //**       James Gott j.a.gott@warwick.ac.uk       **\\
-  //*				 C++ v1.0 July 2014				    *\\
+  //*				 C++ v1.1 July 2014				    *\\
 
 class Calibrate
 {
 public:
 	long Camb, Camr;
-	int binning; // to be converted to plugin input control values
-	double	expo, //used to
-			_t, // not used?????
-			_l, // not used?????
-			_b, //used later with y1 to set the no. of pixels to move [x,y] 
-			_r, //used later with x1 to set the no. of pixels to move [x,y]
+	int binning; // controlled by user input dropdown box
+	double	expo, //controlled by text edit box
+			_t,  
+			_l, 
+			_b, 
+			_r, //camera pixel coordinates
 			sleeptime; //delay while waiting for microscope to respond, to be converted to plugin input
 	DigitalMicrograph::Image img1, img0, imgCC; // live image, reference image & cross-correlation
 	DigitalMicrograph::ScriptObject img_src;
@@ -51,21 +51,8 @@ public:
 	//EMChangeMode
 	std::string mode_want, mode_is; // may not need both of these, or either, function in ExtraGatan
 
-
-
-
 	void DoCalibration(); // aka main for calibration
-	//void UpdateCameraImage(); // possibly done by Acquire in ExtraGatan, need to check
-	//void RemoveOutliers(); // In ExtraGatan, not needed here, check though
 	void GetCoordsFromNTilts(long, long, int &, int &);
-	//void EMChangeMode(); // In ExtraGatan, not needed here, check though
-	//void EMBeamCentre(); // In ExtraGatan, not needed here, check though
-	//double TiltSize(); // In ExtraGatan, not needed here, check though!!!!!
-	//double ShiftSize(); // In ExtraGatan, not needed here, check though, think these 3 are for the old rocking version, may need updating/changing
-	//double DiscSize(); // In ExtraGatan, not needed here, check thpough
-
-
-
 
 	// stuff in script main, may not need here
 

@@ -31,4 +31,5 @@ public:
 	MyTabCtrl m_tbCtrl;
 
 	
+	afx_msg void OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult);
 };

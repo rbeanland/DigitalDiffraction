@@ -8,8 +8,11 @@
 #include "clAmdFft.h"
 #include <complex>
 #include "WorkerClass.h"
+#include "DED_Process.h"
 
 
+
+class Process;
 
 // MyDlg2 dialog
 class MyDlg2 : public CDialog, public WorkerClass
@@ -32,7 +35,14 @@ protected:
 public:	
 	// This functions is part of the WorkerClass.
 	// If you call Start() it will in turn run this function in a seperate Worker Thread, thus not locking up the UI.
+	
+	Process* DEDProcess;
+	
+	
+	
+	
 	virtual void DoWork();
 	
 
+	afx_msg void OnBnClickedButton1();
 };

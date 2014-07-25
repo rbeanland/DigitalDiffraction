@@ -109,6 +109,40 @@ float ExtraGatan::Max(DigitalMicrograph::Image IMG1)
 	return(max);
 } //end of Max function
 
+
+float ExtraGatan::Min(DigitalMicrograph::Image IMG1)
+{
+	Gatan::PlugIn::ImageDataLocker  IMG1Lock(IMG1); //makes an array of floats based on the pixel intensities of the two input images
+	long IMG1_x, IMG1_y;
+	DigitalMicrograph::Get2DSize(IMG1, &IMG1_x, &IMG1_y);
+	float* IMG1Pix = (float*)IMG1Lock.get(); //points to the first member of the array to initialise it
+	int pixnum = IMG1_y*IMG1_x; //determines total size of array
+	int i;
+	float min = FLT_MAX;
+	for (i = 0; i<pixnum; i++)
+	{
+		if (abs(IMG1Pix[i])<min)
+		{
+			min = abs(IMG1Pix[i]);
+		}
+	}
+	IMG1Lock.~ImageDataLocker(); //deconstruction
+	return(min);
+} //end of Max function
+
+long ExtraGatan::Sum(float* imagepix, int numpixels)
+{
+	long sum=0;
+	int i;
+	for (i = 0; i < numpixels; i++)
+	{
+		sum += imagepix[i];
+	}
+	return(sum);
+}
+
+
+
 float ExtraGatan::Max(DigitalMicrograph::Image IMG1, long* x, long* y)
 {
 	Gatan::PlugIn::ImageDataLocker  IMG1Lock(IMG1); //makes an array of floats based on the pixel intensities of the two input images
@@ -144,9 +178,9 @@ void ExtraGatan::PixelPos(DigitalMicrograph::Image IMG1, float min, long* imgX, 
 	int pixnum = IMG1_y*IMG1_x; //determines total size of array
 	int i, j, counter;
 	counter = 0;
-	for(j=0; j<IMG1_y; j++)
+	for(i=0; i<IMG1_x; i++)
 	{
-		for(i=0; i<IMG1_x; i++)
+		for(j=0; j<IMG1_y; j++)
 		{
 			if((IMG1Pix[(IMG1_x*j) + i])==min)
 			{
@@ -389,7 +423,7 @@ bool ExtraGatan::EMChangeMode(std::string mode_want)
 	bool clickedOK = true;
 	bool quit = false;
 	std::string Splashstring = "Please put microscope in " + mode_want + " mode";
-	const char * finalSplash = finalSplash = Splashstring.c_str();
+	const char * finalSplash = Splashstring.c_str();
 	
 	while(mode_want != mode_is)
 	{
@@ -420,43 +454,58 @@ bool ExtraGatan::EMChangeMode(std::string mode_want)
 
 void ExtraGatan::EMBeamCentre(std::string Tag_Path, DigitalMicrograph::Image IMG1)
 {
+	DigitalMicrograph::Result("In EMBeamCentre\n");
 	long ShiftX0, ShiftY0;
-	DigitalMicrograph::String xShpY, yShpX, yShpY, xShpX;
+	//DigitalMicrograph::String xShpY, yShpX, yShpY, xShpX;
+	float xShpY, yShpX, yShpY, xShpX;
 	EMGetBeamShift(&ShiftX0, &ShiftY0);
 	DigitalMicrograph::TagGroup PersistentTags = DigitalMicrograph::GetPersistentTagGroup();
-	std::string xstringx = Tag_Path + "xShpX"; //creating string
-	const char* xtagx = xstringx.c_str(); //converting to c style string, type needed by DM tag functions
-	std::string xstringy = Tag_Path + "xShpY";
-	const char* xtagy = xstringy.c_str();
-	std::string ystringx = Tag_Path + "yShpX";
-	const char* ytagx = ystringx.c_str();
-	std::string ystringy = Tag_Path + "yShpY";
-	const char* ytagy = ystringy.c_str();
-	DigitalMicrograph::TagGroupGetTagAsString(PersistentTags,xtagx, xShpX);
-	DigitalMicrograph::TagGroupGetTagAsString(PersistentTags,xtagy, xShpY);
-	DigitalMicrograph::TagGroupGetTagAsString(PersistentTags,ytagx, yShpX);
-	DigitalMicrograph::TagGroupGetTagAsString(PersistentTags,ytagy, yShpY);
-	std::string xShpXstr = xShpX.operator std::string();//casting to std::string, converting from DM string to std string
-	int xShpXint = boost::lexical_cast<int>(xShpXstr);//casting the std string to int
-	std::string xShpYstr = xShpY.operator std::string();
-	int xShpYint = boost::lexical_cast<int>(xShpYstr);
-	std::string yShpXstr = yShpX.operator std::string();
-	int yShpXint = boost::lexical_cast<int>(yShpXstr);
-	std::string yShpYstr = yShpY.operator std::string();
-	int yShpYint = boost::lexical_cast<int>(yShpYstr);
-	long x0, y0; // coords of untilted beam
-	float maxval = Max(IMG1, &x0, &y0);
+	//std::string xstringx = Tag_Path + "xShpX"; //creating string
+	//const char* xtagx = xstringx.c_str(); //converting to c style string, type needed by DM tag functions
+	//std::string xstringy = Tag_Path + "xShpY";
+	//const char* xtagy = xstringy.c_str();
+	//std::string ystringx = Tag_Path + "yShpX";
+	//const char* ytagx = ystringx.c_str();
+	//std::string ystringy = Tag_Path + "yShpY";
+	//const char* ytagy = ystringy.c_str();
+	DigitalMicrograph::Result("About to get tags...\n");
+	DigitalMicrograph::TagGroupGetTagAsFloat(PersistentTags,(Tag_Path + "xShpX").c_str(), &xShpX);
+	DigitalMicrograph::TagGroupGetTagAsFloat(PersistentTags, (Tag_Path + "xShpY").c_str(), &xShpY);
+	DigitalMicrograph::TagGroupGetTagAsFloat(PersistentTags, (Tag_Path + "yShpX").c_str(), &yShpX);
+	DigitalMicrograph::TagGroupGetTagAsFloat(PersistentTags, (Tag_Path + "yShpY").c_str(), &yShpY);
+	DigitalMicrograph::Result("xShpX ="+boost::lexical_cast<std::string>(xShpX)+"\n");
+	DigitalMicrograph::Result("Got tags...\n");
+	//std::string xShpXstr = xShpX.operator std::string();//casting to std::string, converting from DM string to std string
+	//int xShpXint = boost::lexical_cast<int>(xShpXstr);//casting the std string to int
+	//std::string xShpYstr = xShpY.operator std::string();
+	//int xShpYint = boost::lexical_cast<int>(xShpYstr);
+	//std::string yShpXstr = yShpX.operator std::string();
+	//int yShpXint = boost::lexical_cast<int>(yShpXstr);
+	//std::string yShpYstr = yShpY.operator std::string();
+	//int yShpYint = boost::lexical_cast<int>(yShpYstr);
+	long x0, y0; // coords of untilted beam (in pixels)
+	DigitalMicrograph::Result("Getting max pixel intensity...\n");
+	//float maxval = Max(IMG1, &x0, &y0);
+	float maxval = ExtraGatan::Max(IMG1);
+	ExtraGatan::PixelPos(IMG1, maxval, &x0, &y0, false);
 	long imgx, imgy;
 	DigitalMicrograph::Get2DSize(IMG1, &imgx, &imgy);
 	//long x1 = imgx - x0;//x1,y1 are the no. of pixels to move [x,y]
 	//long y1 = imgy - y0;
 	long x1 = imgx/2 - x0;//x1,y1 are the no. of pixels to move [x,y]
 	long y1 = imgy/2 - y0;
-	long xCentre = (ShiftX0 + x1*xShpXint + y1*yShpXint);
-	long yCentre = (ShiftY0 + x1*xShpYint + y1*yShpYint);
+	//long xCentre = ExtraGatan::round(ShiftX0 + (long)(x1*xShpX) + (long)(y1*yShpX));
+	//long yCentre = ExtraGatan::round(ShiftY0 + (long)(x1*xShpY) + (long)(y1*yShpY));
+	long x1dacsh, y1dacsh;
+	x1dacsh = (long)(x1*xShpX + y1*yShpX);
+	y1dacsh = (long)(x1*xShpY + y1*yShpY);
 	//long xCentre = (x1*xShpXint + y1*yShpXint);
 	//long yCentre = (x1*xShpYint + y1*yShpYint);
-	DigitalMicrograph::EMBeamShift(xCentre, yCentre);
+	DigitalMicrograph::Result("About to shift beam...\n");
+	//ExtraGatan::ABSShift(xCentre, yCentre);
+	DigitalMicrograph::EMBeamShift(x1dacsh, y1dacsh);
+	DigitalMicrograph::Result("Finished in EMBeam Centre, beam should be at centre of image\n");
+	
 	//remember to call a sleep function in the main after calling this function
 }
 
@@ -592,27 +641,26 @@ float ExtraGatan::DiscSize(DigitalMicrograph::Image IMG, long *x0, long *y0, int
 		 {
 		 #pragma omp for private(CCmax,_x0,Cc,iDisc,actrad,_y0)
 		 for (i=0; i<Rmax*2; i+=1)
-						 {
-							actrad = ((float)i)/2;
-							iDisc = MakeDisc(imgX,imgY,actrad);
-							  //DigitalMicrograph::OpenAndSetProgressWindow("Progress", (boost::lexical_cast<std::string>(i) + ", ").c_str(), "");
-							//maximum of cross correlation
-							Cc = CrossCorrelate(iDisc,IMG);
-							//Cc.DataChanged();
-							CCmax = Max(Cc);
-							PixelPos(Cc,CCmax,&_x0,&_y0,false);
-							if (CCmax>BestCc)
-							{
-					
-								Rr=actrad;
-								BestCc=CCmax;
-								*x0=imgX/2 + (imgX/2 - _x0); //as in script ln243, sending position of _x0 to input parameter
-								*y0=imgY/2 + (imgY/2 - _y0); //
-								 //DigitalMicrograph::DisplayAt(iDisc,100,200);
-							}
+				 {
+						actrad = ((float)i)/2;
+						iDisc = MakeDisc(imgX,imgY,actrad);
+						  //DigitalMicrograph::OpenAndSetProgressWindow("Progress", (boost::lexical_cast<std::string>(i) + ", ").c_str(), "");
+						//maximum of cross correlation
+						Cc = CrossCorrelate(iDisc,IMG);
+						//Cc.DataChanged();
+						CCmax = Max(Cc);
+						PixelPos(Cc,CCmax,&_x0,&_y0,false);
+						if (CCmax>BestCc)
+						{
+							Rr=actrad;
+							BestCc=CCmax;
+							*x0=imgX/2 + (imgX/2 - _x0); //as in script ln243, sending position of _x0 to input parameter
+							*y0=imgY/2 + (imgY/2 - _y0); //
+							 //DigitalMicrograph::DisplayAt(iDisc,100,200);
+						}
 							//result(i+": "+Cc+"\n")
 
-						}
+					}
 		 }
 		 DigitalMicrograph::Result("Disc Found\n");
 
@@ -1113,7 +1161,8 @@ float ExtraGatan::Tiltsize(float dTilt, float *T1X, float *T1Y, float *T2X, floa
 	 EMGetBeamTilt(&TiltX0,&TiltY0);
 
 
-	 DigitalMicrograph::Sleep(1);
+	 DigitalMicrograph::Sleep(0.1); //may need to change
+	 DigitalMicrograph::Result("sleeping 0.1...\n");
 	 *img1 = Acquire(*img1, binning, &quit, &success, expo); // ln139? 
 	 (*img1).DataChanged();
 	  *imgCC = CrossCorr(*imgCC,*img1,*img0); // ln142
@@ -1158,6 +1207,7 @@ float ExtraGatan::Tiltsize(float dTilt, float *T1X, float *T1Y, float *T2X, floa
 
 	 //now measure tilt(pixels) per DAC
 	 //finding change in position(pixels) for x-direction
+	 DigitalMicrograph::Result("measuring tilt(pixels) per DAC...\n");
 	 ExtraGatan::ABSTilt(TiltX0+dTilt,TiltY0); //setting tilt to 0 poisition + dtilt in x
 
 	 DigitalMicrograph::Sleep(sleeptime);
@@ -1173,7 +1223,8 @@ float ExtraGatan::Tiltsize(float dTilt, float *T1X, float *T1Y, float *T2X, floa
 	 *T1X=(x-x0)/dTilt; //setting conversion factors
 	 *T1Y=(y-y0)/dTilt;
 
-	 //finding change in position(pixcels) for y-direction
+	 //finding change in position(pixels) for y-direction
+	 DigitalMicrograph::Result("At finding change in position(pixels for y-direction\n");
 	 ExtraGatan::ABSTilt(TiltX0,TiltY0+dTilt);
 	 DigitalMicrograph::Sleep(sleeptime);
 
@@ -1187,11 +1238,12 @@ float ExtraGatan::Tiltsize(float dTilt, float *T1X, float *T1Y, float *T2X, floa
 	 *T2X=(x-x0)/dTilt;
 	 *T2Y=(y-y0)/dTilt;
 	 // setting to 0 position (resetting beam position)
+	 DigitalMicrograph::Result("At setting beam to 0 position\n");
 	 ExtraGatan::ABSTilt(TiltX0,TiltY0);
 	 DigitalMicrograph::Sleep(sleeptime);
 	 *img1 =  Acquire(*img1, binning, &quit, &success, expo);
 	(*img1).DataChanged();
-	 DigitalMicrograph::Result(boost::lexical_cast<std::string>(dTilt) + "\n");
+	 DigitalMicrograph::Result("dTilt ="+boost::lexical_cast<std::string>(dTilt) + "\n");
 
 	 DigitalMicrograph::Result("Tiltsize function complete\n");
 	 return (dTilt);
@@ -1241,6 +1293,7 @@ float ExtraGatan::Shiftsize(float dShift, float *Sh1X, float *Sh1Y,float *Sh2X,f
 	 sX = ShiftX0 + (long)dShift;// added cast to long, updating to new dshift value
 	 sY = ShiftY0;
 	 //now measure shift(pixels) per DAC
+	 // ln 213
 	 ABSShift(sX,sY);// shifting beam in x direction using new dshift value
 	 DigitalMicrograph::Sleep(sleeptime);//have to give the microscope time to respond
 	 s_img1 = Acquire(s_img1, binning,&quit,&success,expo); //shifted image
@@ -1316,7 +1369,7 @@ void ExtraGatan::ABSTilt(long tiltx, long tilty) //changes tilt from current pos
 } 
 
 
-void ExtraGatan::ABSShift(long shiftx, long shifty) //changes shift from current position by shiftx and shifty
+void ExtraGatan::ABSShift(long shiftx, long shifty) //changes shift from current position to target shiftx and shifty
 {
 	long currentX, currentY;
 	EMGetBeamShift(&currentX, &currentY);
@@ -1325,7 +1378,7 @@ void ExtraGatan::ABSShift(long shiftx, long shifty) //changes shift from current
 	DigitalMicrograph::Result("ShiftX = " + boost::lexical_cast<std::string>(currentX) + " , ShiftY = " + boost::lexical_cast<std::string>(currentY) + "\n");
 }
 
-void ExtraGatan::CircularMask2D(DigitalMicrograph::Image *input,long pix_X,long pix_Y,float radius)
+void ExtraGatan::CircularMask2D(DigitalMicrograph::Image *input,long pix_X,long pix_Y,float radius)//pix_X pix_Y are centre pixel coords
 {
 	long imgX, imgY;
 	
@@ -1343,9 +1396,11 @@ void ExtraGatan::CircularMask2D(DigitalMicrograph::Image *input,long pix_X,long 
 		GetPixelXandY(i,&currentX,&currentY,imgX);
 		xdist = (float) (abs(currentX-pix_X));
 		ydist = (float) (abs(currentY-pix_Y));
-		dist =(pow(xdist,2) + pow(ydist,2));
+		//dist =(pow(xdist,2) + pow(ydist,2));
+		dist = (xdist*xdist) + (ydist*ydist);
 		
-		if(dist>(pow(radius,2)+radius-1)) //
+		//if(dist>(pow(radius,2)+radius-1)) //
+		if (dist>(radius*radius))
 		{
 			inPix[i] = 0;
 		}
@@ -1446,7 +1501,10 @@ DigitalMicrograph::Image ExtraGatan::MakeDisc(long imgX, long imgY, float radius
 	/*	float  max, min;
 	DigitalMicrograph::ImageCalculateMinMax(fieldofones,0,0,&min,&max);
 	onePix[imgY/2*imgX + imgX/2] = max*1.25;*/
-	ExtraGatan::CircularMask2D(&fieldofones,ceil((float)(imgX/2)),ceil((float)(imgY/2)),radius);
+
+	//ExtraGatan::CircularMask2D(&fieldofones,ceil((float)(imgX/2)),ceil((float)(imgY/2)),radius);
+	ExtraGatan::CircularMask2D(&fieldofones, ExtraGatan::round((float)((float)imgX / 2)), ExtraGatan::round((float)((float)imgY / 2)), radius);
+
 	//DigitalMicrograph::SetLimits(fieldofones,0,1);
 	return(fieldofones);
 }
@@ -2278,7 +2336,7 @@ void ExtraGatan::DrawRedX(DigitalMicrograph::Image *input)
 	long imgX, imgY;
 	DigitalMicrograph::ImageDisplay img_disp;
 	DigitalMicrograph::Get2DSize(*input,&imgX,&imgY);
-	DigitalMicrograph::Component left = DigitalMicrograph::NewLineAnnotation(0,0,imgX,imgY);
+	DigitalMicrograph::Component left = DigitalMicrograph::NewLineAnnotation(0,0,imgY,imgX);
 	DigitalMicrograph::Component right = DigitalMicrograph::NewLineAnnotation(imgY,0,0,imgX);
 	try
 		{

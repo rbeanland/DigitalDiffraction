@@ -63,6 +63,12 @@
     <ClCompile Include="DED_TiltCalibration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DED_Collect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DED_Process.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyTabCtrl.h">
@@ -113,13 +119,16 @@
     <ClInclude Include="WorkerClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D-ED_Collect.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ExtraGatan.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DED_TiltCalibration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DED_Collect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DED_Process.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -9,10 +9,11 @@
 #include "utility.h"
 
 
-//** Some functions to fill the gaps in the Digital Micrograph SDK **\\
-//**	  Richard Beanland (scripts)	  r.beanland@warwick.ac.uk  **\\ 
-//**	  Adam Dyson (camera functions)   m.a.dyson@warwick.ac.uk	**\\
-//**	  Joel Forster (C++ conversion)	  j.c.forster@warwick.ac.uk	**\\
+//** Some functions to fill the gaps in the Digital Micrograph SDK    **\\
+//**	  Richard Beanland (scripts)	  r.beanland@warwick.ac.uk    **\\ 
+//**	  Adam Dyson (camera functions)   m.a.dyson@warwick.ac.uk	  **\\
+//**	  Joel Forster (C++ conversion)	  j.c.forster@warwick.ac.uk   **\\
+//**	  James Gott (C++ conversion continued) j.a.gott@warwick.ac.uk**\\
 
 class ROICheck;
 
@@ -26,6 +27,8 @@ public:
 	static DigitalMicrograph::Image tert(DigitalMicrograph::Image INPUT, float thr); //replaces the tert() function from DM
 	static DigitalMicrograph::Image Normalise(DigitalMicrograph::Image IMG1, float max); //divides every pixel in an image by the specificed max value
 	static float Max(DigitalMicrograph::Image IMG1); //finds the brightest pixel in an image
+	static float Min(DigitalMicrograph::Image IMG1); //finds the dimmest pixel in an image
+	static long Sum(float*,int); //finds the sum of pixel values in a 1D image
 	static float Max(DigitalMicrograph::Image IMG1, long* x, long* y); //finds the brightest pixel in an image
 	static void PixelPos(DigitalMicrograph::Image IMG1, float min, long* imgX, long* imgY, bool avg); //finds the x and y of a given pixel value, if avg is switched on, it gets the average location between equivalent values
 	static std::string EMGetImagingOpticsMode(); //gets the current microscope mode

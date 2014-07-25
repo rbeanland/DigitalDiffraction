@@ -34,7 +34,9 @@ MyDlg1::MyDlg1(CWnd* pParent /*=NULL*/)
 
 
 	DEDCalibrate = new Calibrate;
-
+	DEDCollect = new Collect;
+	tiltcalibration = false;
+	collect = false;
 	
 	DM::TagGroup PersistentTags = DM::GetPersistentTagGroup();
 	DM::String clPlatformTag;
@@ -138,6 +140,8 @@ void MyDlg1::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(MyDlg1, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON1, &MyDlg1::OnBnClickedButton1)
+	ON_BN_CLICKED(IDC_BUTTON2, &MyDlg1::OnBnClickedButton2)
+	ON_BN_CLICKED(IDC_BUTTON3, &MyDlg1::OnBnClickedButton3)
 END_MESSAGE_MAP()
 
 BOOL MyDlg1::PreTranslateMessage(MSG* pMsg)
@@ -160,28 +164,61 @@ void MyDlg1::DoWork()
 	{
 		double typchk1 = boost::lexical_cast<double>(str_expo_input);
 		double typchk2 = boost::lexical_cast<double>(str_sleeptime_input);
-
+		int typchk3 = boost::lexical_cast<int>(str_binning_input);
 	}
 	catch(boost::bad_lexical_cast &)
 	{
-		DigitalMicrograph::OkDialog("Expo and Sleeptime of incorrect type!\nTry again");
+		DigitalMicrograph::OkDialog("Expo, Sleeptime or Binning of incorrect type!\nTry again");
 		_continue=false;
 		return;
 	}
-	if(tiltcalibration == true && _continue==true)
+
+	
+
+	if(_continue==true)
 	{
 		binning_input = boost::lexical_cast<int>(str_binning_input);
 		expo_input = boost::lexical_cast<double>(str_expo_input);
 		sleeptime_input=boost::lexical_cast<double>(str_sleeptime_input);
+		if(binning_input==1||binning_input==2||binning_input==3||binning_input==4)
+		{
 		DEDCalibrate->binning = binning_input;
+		DEDCollect->binning = binning_input;
 		DEDCalibrate->expo = expo_input;
+		DEDCollect->expo = expo_input;
 		DEDCalibrate->sleeptime = sleeptime_input;
+		DEDCollect->sleeptime = sleeptime_input;
 		DigitalMicrograph::Result(boost::lexical_cast<std::string>(expo_input) + "  " + boost::lexical_cast<std::string>(binning_input) + "  " + boost::lexical_cast<std::string>(sleeptime_input) + "  " + "\n");
-		DEDCalibrate->DoCalibration();
+		
+		}
+		else
+		{
+			DigitalMicrograph::OkDialog("Binning must take value 1,2,3 or 4 only\nPlease try again");
+			return;
+		}
+		//DEDCalibrate->binning = binning_input;
+		//DEDCollect->binning = binning_input;
+		//DEDCalibrate->expo = expo_input;
+		//DEDCollect->expo = expo_input;
+		//DEDCalibrate->sleeptime = sleeptime_input;
+		//DEDCollect->sleeptime = sleeptime_input;
+		//DigitalMicrograph::Result(boost::lexical_cast<std::string>(expo_input) + "  " + boost::lexical_cast<std::string>(binning_input) + "  " + boost::lexical_cast<std::string>(sleeptime_input) + "  " + "\n");
 	}
 	else
 	{
 		DigitalMicrograph::OkDialog("Failed to calibrate");// need to change this
+	}
+
+	if(tiltcalibration == true)
+	{
+		DEDCalibrate->DoCalibration();
+		tiltcalibration=false;
+	}
+
+	if(collect == true)
+	{
+		DEDCollect->DoCollection();
+		collect=false;
 	}
 }
 
@@ -192,3 +229,36 @@ void MyDlg1::OnBnClickedButton1()
 	Start();
 }
 
+
+
+void MyDlg1::OnBnClickedButton2()
+{
+	// TODO: Add your control notification handler code here
+	collect = true;
+	Start();
+}
+
+
+void MyDlg1::OnBnClickedButton3()
+{
+	try
+	{
+		DigitalMicrograph::Image Front;
+		// TODO: Add your control notification handler code here
+		if (DigitalMicrograph::GetFrontImage(Front))
+		{
+			Front = DigitalMicrograph::FindFrontImage();
+			ExtraGatan::DrawRedX(&Front);
+		}
+		else
+		{
+			DigitalMicrograph::OkDialog("Could not find front image");
+		}
+	}
+	catch (...)
+	{
+
+
+	}
+	// TODO: Add your control notification handler code here
+}
