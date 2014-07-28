@@ -207,7 +207,7 @@ void Calibrate::DoCalibration()
 
 		DigitalMicrograph::Result("tIncX = " + boost::lexical_cast<std::string>(tIncX)+", tIncY = " + boost::lexical_cast<std::string>(tIncY)+"\n");
 
-		tX = TiltX0 + (long)((ii*xTpX + jj*yTpX)*tIncX); //may need to chenge casting/types
+		tX = TiltX0 + (long)((ii*xTpX + jj*yTpX)*tIncX); //may need to change casting/types
 		tY = TiltY0 + (long)((ii*xTpY + jj*yTpY)*tIncY);
 		//tX = TiltX0 + (ii*xTpX + jj*yTpX)*tIncX;
 		//tY = TiltY0 + (ii*xTpY + jj*yTpY)*tIncY;
@@ -251,22 +251,25 @@ void Calibrate::DoCalibration()
 			maxval = ExtraGatan::Max(img1);
 			ExtraGatan::PixelPos(img1, maxval, &x, &y, false); //putting beam position coords into x and y
 			//mark and save it
-			for(m=-3; m<3; m++)
+			for(m=-4; m<4; m++)
 			{
-				for(v=-3; v<3; v++) //think this marks a square on the mark image
+				for(v=-4; v<4; v++) //this marks a square on the mark image
 				{
 					markpix[x + m + (y+v)*img1_X] = 100;
 				}
 			}
 			mark.DataChanged();
-			DigitalMicrograph::Result("May produce wrong image here... ln260\n");
+			//DigitalMicrograph::Result("May produce wrong image here... ln260\n");
 			dx = x - X0; //may be wrong
 			dy = y - Y0; //may be wrong
 
 			sX= ShiftX0 - (dx*xShpX + dy*yShpX);
 			sY= ShiftY0 - (dx*xShpY + dy*yShpY);
-			XshPix[(ii+nTilts)+(jj+nTilts)*((2*nTilts)+1)] = sX;//NB negative of measured value so shift cancels tilt
-			YshPix[(ii+nTilts)+(jj+nTilts)*((2*nTilts)+1)] = sY;
+			//XshPix[(ii+nTilts)+(jj+nTilts)*((2*nTilts)+1)] = sX;//NB negative of measured value so shift cancels tilt
+			//YshPix[(ii+nTilts)+(jj+nTilts)*((2*nTilts)+1)] = sY;
+			XshPix[(ii + nTilts) + (jj + nTilts)*((2 * nTilts) + 1)] = -dx;//NB negative of measured value so shift cancels tilt
+			YshPix[(ii + nTilts) + (jj + nTilts)*((2 * nTilts) + 1)] = -dy;
+
 			pt++;
 		}
 		//Save XSh and YSh for later
@@ -331,7 +334,7 @@ void Calibrate::DoCalibration()
 	// tidy up
 	// reset tilts to original values
 	ExtraGatan::ABSTilt(TiltX0, TiltY0);
-	DigitalMicrograph::Result("Tilts reset to saved values\n");
+	DigitalMicrograph::Result("Tilts reset to origianl values\n");
 	DigitalMicrograph::DeleteImage(img0);
 	DigitalMicrograph::DeleteImage(img1);
 	DigitalMicrograph::DeleteImage(imgCC);

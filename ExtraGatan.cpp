@@ -1161,11 +1161,16 @@ float ExtraGatan::Tiltsize(float dTilt, float *T1X, float *T1Y, float *T2X, floa
 	 EMGetBeamTilt(&TiltX0,&TiltY0);
 
 
-	 DigitalMicrograph::Sleep(0.1); //may need to change
+	 DigitalMicrograph::Sleep(0.02); //may need to change
 	 DigitalMicrograph::Result("sleeping 0.1...\n");
 	 *img1 = Acquire(*img1, binning, &quit, &success, expo); // ln139? 
 	 (*img1).DataChanged();
-	  *imgCC = CrossCorr(*imgCC,*img1,*img0); // ln142
+//////////////////////////////////////////////////////////////////////////
+	//  *imgCC = CrossCorr(*imgCC,*img1,*img0); // ln142
+	 //////////////////////////////////////////////////////////////
+	 *imgCC = DigitalMicrograph::CrossCorrelate(*img1, *img0);
+
+
 	 (*imgCC).DataChanged();
 
 	 DigitalMicrograph::UpdateImage(*imgCC); //ln143
@@ -1187,7 +1192,8 @@ float ExtraGatan::Tiltsize(float dTilt, float *T1X, float *T1Y, float *T2X, floa
 	 *img1 =  Acquire(*img1, binning, &quit, &success, expo); //ln149 getting tilted image
 	(*img1).DataChanged();
 
-	  *imgCC = CrossCorr(*imgCC,*img0,*img1);
+	  //*imgCC = CrossCorr(*imgCC,*img0,*img1);
+	*imgCC = DigitalMicrograph::CrossCorrelate(*img1, *img0);
 	   (*imgCC).DataChanged();
 
 	 DigitalMicrograph::UpdateImage(*imgCC);
@@ -1213,7 +1219,11 @@ float ExtraGatan::Tiltsize(float dTilt, float *T1X, float *T1Y, float *T2X, floa
 	 DigitalMicrograph::Sleep(sleeptime);
 	 *img1 =  Acquire(*img1, binning, &quit, &success, expo);//acquiring tilted image
 	(*img1).DataChanged();
-	 *imgCC = CrossCorr(*imgCC,*img0,*img1);
+
+	////////////////////////////////////////////
+	// *imgCC = CrossCorr(*imgCC,*img0,*img1);
+	//////////////////////////////////////////////
+	*imgCC = DigitalMicrograph::CrossCorrelate(*img1, *img0);
 	  (*imgCC).DataChanged();
 	 DigitalMicrograph::UpdateImage(*imgCC);
 
@@ -1230,7 +1240,12 @@ float ExtraGatan::Tiltsize(float dTilt, float *T1X, float *T1Y, float *T2X, floa
 
 	 *img1 =  Acquire(*img1, binning, &quit, &success, expo);
 	(*img1).DataChanged();
-	 *imgCC = CrossCorr(*imgCC,*img0,*img1);
+	/////////////////////////////////
+	// *imgCC = CrossCorr(*imgCC,*img0,*img1);
+	///////////////////////////////
+	*imgCC = DigitalMicrograph::CrossCorrelate(*img1, *img0);
+
+
 	 DigitalMicrograph::UpdateImage(*imgCC);
 	 (*imgCC).DataChanged();
 	 maxval = Max(*imgCC);
@@ -1280,7 +1295,11 @@ float ExtraGatan::Shiftsize(float dShift, float *Sh1X, float *Sh1Y,float *Sh2X,f
 	 DigitalMicrograph::Sleep(sleeptime);//have to give the microscope time to respond
 	 s_img1 = Acquire(s_img1,binning,&quit,&success,expo);//getting shifted image
 	 (s_img1).DataChanged();
-	 s_imgCC=CrossCorr(s_imgCC,s_img1,s_img0);
+	 ///////////////////////////////////////////
+	 //s_imgCC=CrossCorr(s_imgCC,s_img1,s_img0);
+	 //////////////////////////
+	 s_imgCC = DigitalMicrograph::CrossCorrelate(s_img1, s_img0);
+
 	 (s_imgCC).DataChanged();
 	 DigitalMicrograph::UpdateImage(s_imgCC);
 	 long x,y;//coords of shifted beam
@@ -1298,7 +1317,11 @@ float ExtraGatan::Shiftsize(float dShift, float *Sh1X, float *Sh1Y,float *Sh2X,f
 	 DigitalMicrograph::Sleep(sleeptime);//have to give the microscope time to respond
 	 s_img1 = Acquire(s_img1, binning,&quit,&success,expo); //shifted image
 	 (s_img1).DataChanged();
-	 s_imgCC=CrossCorr(s_imgCC,s_img0,s_img1);
+	 /////////////////////////////////////
+	 //s_imgCC=CrossCorr(s_imgCC,s_img0,s_img1);
+	 ////////////////////////////
+	 s_imgCC = DigitalMicrograph::CrossCorrelate(s_img1, s_img0);
+
 	 DigitalMicrograph::UpdateImage(s_imgCC);
 	 s_imgCC.DataChanged();
 	 maxval = Max(s_imgCC);
@@ -1313,7 +1336,12 @@ float ExtraGatan::Shiftsize(float dShift, float *Sh1X, float *Sh1Y,float *Sh2X,f
 	 DigitalMicrograph::Sleep(sleeptime);//have to give the microscope time to respond
 	 s_img1 = Acquire(s_img1, binning,&quit,&success,expo);//shifted image
 	 DigitalMicrograph::UpdateImage(s_img1);
-	 s_imgCC=CrossCorr(s_imgCC,s_img0,s_img1);
+	 ///////////////////////////////////////
+	//s_imgCC=CrossCorr(s_imgCC,s_img0,s_img1);
+	 /////////////////////////////////
+	 s_imgCC = DigitalMicrograph::CrossCorrelate(s_img1, s_img0);
+
+
 	 DigitalMicrograph::UpdateImage(s_imgCC);
 	 maxval = Max(s_imgCC);
 	 PixelPos(s_imgCC,maxval,&x,&y, false);
