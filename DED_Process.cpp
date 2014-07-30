@@ -4,20 +4,39 @@
 void Process::ROIpos(DigitalMicrograph::Image Img,std::string prompt,double &t, double &l, double &b, double &r)
 {
 	long imgX,imgY;
-	bool ClickedOK;
+	bool ClickedOK, onroi;
 	DigitalMicrograph::Get2DSize(Img,&imgX,&imgY);
 	DigitalMicrograph::ImageDisplay img_disp;
 	img_disp = DigitalMicrograph::ImageGetImageDisplay(Img,0);
 	DigitalMicrograph::ROI theROI=DigitalMicrograph::NewROI();
 	DigitalMicrograph::ROISetRectangle(theROI,t,l,b,r);
 	DigitalMicrograph::ImageDisplayAddROI(img_disp,theROI);
+	onroi = false;
 	ClickedOK=true;
-	long sem;//may be wrong
+	
+	/*while (onroi == false)
+	{
+		try
+		{
+			ClickedOK = DigitalMicrograph::ContinueCancelDialog(prompt.c_str());
+			if (ClickedOK)
+			{
+				onroi = true;
+			}
+		}
+		catch (...)
+		{
+			DigitalMicrograph::OkDialog("Error occurred in ROIpos function");
+			return;
+		}
+	}*/
+
+	long sem;
 	sem = DigitalMicrograph::NewSemaphore();
 
 	try
 	{
-		DigitalMicrograph::ModelessDialog(prompt.c_str(),"OK",sem);//maybe replaced by OKDialog??????
+		DigitalMicrograph::ModelessDialog(prompt.c_str(),"OK",sem);
 		DigitalMicrograph::GrabSemaphore(sem);
 		DigitalMicrograph::ReleaseSemaphore(sem);
 		DigitalMicrograph::FreeSemaphore(sem);
@@ -26,7 +45,6 @@ void Process::ROIpos(DigitalMicrograph::Image Img,std::string prompt,double &t, 
 	{
 		DigitalMicrograph::FreeSemaphore(sem);
 		ClickedOK=false;
-		DigitalMicrograph::Result("Error in semaphore section");
 		return;
 	}
 
@@ -559,14 +577,17 @@ void Process::GetG_Vectors(DigitalMicrograph::Image Avg, float Rr, float &g1X, f
 void Process::DoProcess()
 {
 	long f = 0;
-	char date[100], time[100];
+	char date[11], time[6];
 	std::string datestring, timestring;
-	DigitalMicrograph::GetDate(f, date, 100);
-	DigitalMicrograph::GetTime(f, time, 100);
+	DigitalMicrograph::GetDate(f, date, 11);
+	DigitalMicrograph::GetTime(f, time, 6);
 	int i;
-	for (i = 0; i<100; i++)
+	for (i = 0; i<10; i++)
 	{
 		datestring += date[i];
+	}
+	for (i = 0; i < 5; i++)
+	{
 		timestring += time[i];
 	}
 	std::string datetimestring = datestring + "_" + timestring;
@@ -760,6 +781,8 @@ void Process::DoProcess()
 	//Create scratch image for calculation of average
 	DigitalMicrograph::Image ScratImg;
 	ScratImg = DigitalMicrograph::RealImage("Average", 4, imgX, imgY);
+	Gatan::PlugIn::ImageDataLocker scratlock(ScratImg);
+	float* scratpix = (float*)scratlock.get();
 
 	long Rr2 = (float)ExtraGatan::round((Wfrac*Rr) / 100);
 
@@ -775,6 +798,8 @@ void Process::DoProcess()
 	//vTempImg = DigitalMicrograph::RealImage("Temp", 4, 2 * Rr2, 2 * Rr2);
 
 	vTempImg = ExtraGatan::MakeDisc(2 * Rr2, 2 * Rr2, Rr2);
+	Gatan::PlugIn::ImageDataLocker vtempimglock(vTempImg);
+	float* vtempimgpix = (float*)vtempimglock.get();
 
 
 	//loop over DLACBED image
@@ -805,15 +830,202 @@ void Process::DoProcess()
 						}
 					}
 					//Cropped to be circular
-					ExtraGatan::CircularMask2D(&TempImg, Rr2, Rr2, Rr2); //need to test this!!
+					ExtraGatan::CircularMask2D(&TempImg, Rr2, Rr2, Rr2); //may need to adjust the y-coordinate in this function
 
 					//Add it to the LACBED pattern
+					for (ii = (X - Rr2); ii < (X + Rr2); ii++)
+					{
+						for (jj = (Y - Rr2); jj < (Y + Rr2); jj++)
+						{
+							DLACBEDpix[imgX*imgY*gNo + imgX*jj + ii] += tempimgpix[(jj-(Y-Rr2))*imgX + (ii-(X-Rr2))];//may be wrong index numbers, also +=
+						}
+					}
 
+					//Update mask which keeps count of the number of images in one pixel
+
+					for (ii = (X - Rr2); ii < (X + Rr2); ii++)
+					{
+						for (jj = (Y - Rr2); jj < (Y + Rr2); jj++)
+						{
+							scratpix[imgX*jj + ii] += vtempimgpix[(jj - (Y - Rr2))*imgX + (ii - (X - Rr2))];//may be wrong index numbers, also +=
+						}
+					}
+
+					////////////////////
+
+					for (ii = 0; ii < 2 * Rr2; ii++)
+					{
+						for (jj = 0; jj < 2 * Rr2; jj++)
+						{
+							if (vtempimgpix[(2 * Rr2*jj) + ii] > tempimgpix[(2 * Rr2*jj) + ii])
+							{
+								tempimgpix[(2 * Rr2*jj) + ii] = vtempimgpix[(2 * Rr2*jj) + ii];
+							}
+						}
+					}//this should probably be an external tert function?
+
+				}//end of if(inside)
+
+			}//end of for(pt) loop
+
+			//make pixels with zero values equal 1
+			for (ii = 0; ii < imgX; ii++)
+			{
+				for (jj = 0; jj < imgY * Rr2; jj++)
+				{
+					if (scratpix[imgX*jj + ii] == 0)
+					{
+						scratpix[imgX*jj + ii] += 1;
+					}
 				}
-
 			}
+
+			//divide by mask
+			for (ii = 0; ii < (imgX*imgY); ii++)
+			{
+				DLACBEDpix[ii] /= scratpix[ii];
+			}
+
+			for (ii = 0; ii < (imgX*imgY); ii++)
+			{
+				scratpix[ii] = 0;
+			}
+
+			gNo++;
+
 		}
 	}
 
+	float dlacmin, dlacmax;
+	dlacmin = ExtraGatan::Min(DLACBEDimg);
+	dlacmax = ExtraGatan::Max(DLACBEDimg);
+	DigitalMicrograph::SetLimits(DLACBEDimg, dlacmin, dlacmax);
+
+	//Tidy up
+	DigitalMicrograph::DeleteImage(TempImg);
+	DigitalMicrograph::DeleteImage(vTempImg);
+	DigitalMicrograph::Result(" Done\n");
+
+	///////////////////////////////////////////
+	//Montage of D-LACBED images
+	DigitalMicrograph::Result("Creating Montage of D-LACBED images...\n");
+
+	//each D-LACBED image is (2*nTilts+3)*Rr wide
+
+	float wid;
+	wid = (nTilts + 1.5)*Rr;
+	//Scaling factors between CBED image and montage image
+	//F is the relative size of D-LACBED vs original disc size
+	//Uses the largest component of the smallest g-vector
+
+	float F, FimgX;//may need to change types
+	if (g1mag < g2mag)
+	{
+		F = (2 * wid) / (ExtraGatan::maxoftwo(g1X, g1Y));
+	}
+	else
+	{
+		F = (2 * wid) / (ExtraGatan::maxoftwo(g2X, g2Y));
+	}
+
+	//FimgX is the size of the montage, uses the largest dimension
+	//depending on number of reflections and magnitude
+	if (ExtraGatan::maxoftwo(g1X, g1Y) > ExtraGatan::maxoftwo(g2X, g2Y))
+	{
+		FimgX = ExtraGatan::maxoftwo((2 * nV1*ExtraGatan::maxoftwo(g1X, g1Y)*F + 2 * wid), (2 * nV2 * 2 * wid + 2 * wid));
+	}
+	else
+	{
+		FimgX = ExtraGatan::maxoftwo((2 * nV2*ExtraGatan::maxoftwo(g1X, g1Y)*F + 2 * wid), (2 * nV1 * 2 * wid + 2 * wid));
+	}
+
+	float FimgY = FimgX;
+	//The 000 image will be in the centre
+	float Lx, Ly;
+	Lx = ExtraGatan::round(FimgX / 2);
+	Ly = ExtraGatan::round(FimgY / 2);
+
+	DigitalMicrograph::Image Montage;
+	Montage = DigitalMicrograph::RealImage("D-LACBED montage", 4, (long)FimgX, (long)FimgY);
+	Gatan::PlugIn::ImageDataLocker montagelock(Montage);
+	float* montagepix = (float*)montagelock.get();
+
+
+	Montage.GetOrCreateImageDocument().ShowAtPosition(440, 30);
+	DigitalMicrograph::SetWindowSize(Montage, 0.75*imgX, 0.75*imgY);
+	DigitalMicrograph::UpdateImage(Montage);
+
+	long t2, l2, b2, r2, t1, l1, b1, r1;
+	float a2X, a2Y, a1X, a1Y;
+	gNo = 0;
+
+	for (m1 = -nV1; m1 < nV1 + 1; m1++)
+	{
+		for (m2 = -nV2; m2 < nV2 + 1; m2++)
+		{
+			//a2 is the centre of the rectangle where the D_LACBED images comes from in the stack
+			a2X = ExtraGatan::round(pX + m1*g1X + m2*g2X);
+			a2Y = ExtraGatan::round(pY + m1*g1Y + m2*g2Y);
+			
+			//Bounding rectangle for each D-LACBED image
+			t2 = (long)ExtraGatan::round((a2Y - wid)*(1 - ((a2Y - wid) < 0 ? 1 : 0)));
+			l2 = (long)ExtraGatan::round((a2X - wid)*(1 - ((a2X - wid) < 0 ? 1 : 0)));
+			b2 = (long)ExtraGatan::round((a2Y + wid)*(1 - ((a2Y + wid) > imgY ? 1 : 0)) + ((a2Y + wid) > imgY ? 1 : 0)*imgY);
+			b2 = (long)ExtraGatan::round((a2X + wid)*(1 - ((a2X + wid) > imgX ? 1 : 0)) + ((a2X + wid) > imgX ? 1 : 0)*imgX);
+			
+			//a1 is the location of the rectangle where the D-LACBED image will go in the montage
+			a1X = ExtraGatan::round(Lx + (m1*g1X + m2*g2X)*F);
+			a1Y = ExtraGatan::round(Ly + (m1*g1Y + m2*g2Y)*F);
+
+			t1 = (long)ExtraGatan::round(a1Y - a2Y + t2);
+			l1 = (long)ExtraGatan::round(a1X - a2X + l2);
+			b1 = (long)ExtraGatan::round(a1Y + b2 - a2Y);
+			r1 = (long)ExtraGatan::round(a1X + r2 - a2X);
+
+			inside = !((l1<0) || (r1>FimgX) || (t1<0) || (b1>FimgY));
+			if (inside);
+			{
+				for (ii = 0; ii < (r1-l1); ii++)
+				{
+					for (jj = 0; jj < (b1-t1); jj++)
+					{
+						if (DLACBEDpix[(imgX*imgY*gNo) + (jj + t2)*imgX + (ii + l2)] == 0)
+						{
+							montagepix[(t1 + jj)*(long)FimgX + (l1 + ii)] = montagepix[(t1 + jj)*(long)FimgX + (l1 + ii)];
+						}
+						else
+						{
+							montagepix[(t1 + jj)*(long)FimgX + (l1 + ii)] = DLACBEDpix[(imgX*imgY*gNo) + (jj + t2)*imgX + (ii + l2)];
+						}
+					}
+				}
+
+			}//end of if(inside)
+
+			gNo++;
+
+			
+		}
+	}
+
+	float montmin, montmax;
+	montmin = ExtraGatan::Min(Montage);
+	montmax = ExtraGatan::Max(Montage);
+	DigitalMicrograph::SetLimits(Montage, montmin, montmax);
+
+	DigitalMicrograph::GetDate(f, date, 11);
+	DigitalMicrograph::GetTime(f, time, 6);
+	int i;
+	for (i = 0; i<10; i++)
+	{
+		datestring += date[i];
+	}
+	for (i = 0; i < 5; i++)
+	{
+		timestring += time[i];
+	}
+	std::string datetimestring = datestring + "_" + timestring;
+
+	DigitalMicrograph::Result("Processing complete: " + datetimestring + " ding, dong\n\n");
 
 }
