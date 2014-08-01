@@ -106,4 +106,9 @@ public:
 	static DigitalMicrograph::Image CrossCorr(DigitalMicrograph::Image Cc, DigitalMicrograph::Image img1, DigitalMicrograph::Image img2);
 	static DigitalMicrograph::Image CrossCorr2(DigitalMicrograph::Image Cc, DigitalMicrograph::Image img1, DigitalMicrograph::Image img2);
 	static void SafeSave(std::string path, DigitalMicrograph::Image input);
+
+	static float maxoftwo(float, float);
+	static void setCompCol(DigitalMicrograph::Component annot, float r, float g, float b);
+	static void ExtraGatan::InvCircularMask2D(DigitalMicrograph::Image *input, long pix_X, long pix_Y, float radius);
+	static double ExtraGatan::altInterpolate(DigitalMicrograph::Image* input, long xCal, long yCal, long pX, long nX, long pY, long nY, long nnX, long nnY);
 };

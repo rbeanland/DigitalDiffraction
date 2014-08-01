@@ -1,14 +1,55 @@
 #include "stdafx.h"
 #include "DED_Collect.h"
-
-void Collect::GetCoordsFromNTilts(long nTilts,long currentPoint, int &i, int &j)
+void Collect::GetCoordsFromNTilts(long nTilts,long currentPoint, int &i, int &j)//based on nTilts(user input) and current pt on stack image, npts given by ntilts
 {
 	int side = 2*nTilts+1;
 	j = floor(((double)currentPoint)/((double)side))-nTilts;
 	i = ((currentPoint % side) - nTilts)*pow((float)(-1),(int)(j % 2));//NB % means modulo, flips sign every row
 }
 
-bool Collect::LoadTiltCalibImages()
+void Collect::TestDia()
+{
+	try
+	{
+		DigitalMicrograph::Image Front;
+		// TODO: Add your control notification handler code here
+		if (DigitalMicrograph::GetFrontImage(Front))
+		{
+			Front = DigitalMicrograph::FindFrontImage();
+			ExtraGatan::DrawRedX(&Front);
+		}
+		else
+		{
+			DigitalMicrograph::OkDialog("Could not find front image");
+		}
+	}
+	catch (...)
+	{
+	}
+	long sem;
+	sem = DigitalMicrograph::NewSemaphore();
+	try
+	{
+
+		DigitalMicrograph::FloatingModelessDialog("Testing dialog", "OK", sem);
+		DigitalMicrograph::Result("sem = " + boost::lexical_cast<std::string>(sem)+"\n");
+
+
+		DigitalMicrograph::GrabSemaphore(sem);
+		DigitalMicrograph::ReleaseSemaphore(sem);
+		DigitalMicrograph::FreeSemaphore(sem);
+	}
+	catch (...)
+	{
+		DigitalMicrograph::ReleaseSemaphore(sem);
+		DigitalMicrograph::FreeSemaphore(sem);
+		DigitalMicrograph::Result("In catch\n");
+	}
+
+	DigitalMicrograph::Result("passed\n");
+}
+
+bool Collect::LoadTiltCalibImages(DigitalMicrograph::Image *TiltCal, DigitalMicrograph::Image *Xsh, DigitalMicrograph::Image *Ysh)
 {
 	file_name="D-ED_TiltCal_A"+boost::lexical_cast<std::string>(alpha)+"_B"+boost::lexical_cast<std::string>(binning)+"_C"+boost::lexical_cast<std::string>(CamL)+".dm4";
 	std::string filepath=pathname+file_name;
@@ -17,8 +58,8 @@ bool Collect::LoadTiltCalibImages()
 
 	if(DigitalMicrograph::DoesFileExist(filepath))
 	{
-		TiltCal = DigitalMicrograph::NewImageFromFile(filepath);
-		DigitalMicrograph::Get3DSize(TiltCal, &nCals, &temp1, &temp2);
+		*TiltCal = DigitalMicrograph::NewImageFromFile(filepath);
+		DigitalMicrograph::Get3DSize(*TiltCal, &nCals, &temp1, &temp2);
 		nCals = (nCals-1)/2;
 	}
 	if (!DigitalMicrograph::DoesFileExist(filepath))
@@ -28,35 +69,37 @@ bool Collect::LoadTiltCalibImages()
 		return(false);
 	}
 
-	Xsh = DigitalMicrograph::RealImage("X-shift with tilt", 4, (2*nCals)+1, (2*nCals)+1);
-	Ysh = DigitalMicrograph::RealImage("Y-shift with tilt", 4, (2*nCals)+1, (2*nCals)+1);
+	*Xsh = DigitalMicrograph::RealImage("X-shift with tilt", 4, (2*nCals)+1, (2*nCals)+1);
+	*Ysh = DigitalMicrograph::RealImage("Y-shift with tilt", 4, (2*nCals)+1, (2*nCals)+1);
 	
-	XshLock.lock(Xsh);//putting Xsh image into xshlock locker
+	XshLock.lock(*Xsh);//putting Xsh image into xshlock locker
 	XshPix = (float*) XshLock.get();//pointing to start of locker array
 	
-	YshLock.lock(Ysh);
+	YshLock.lock(*Ysh);
 	YshPix = (float*) YshLock.get();
 	
-	TiltLock.lock(TiltCal);
+	TiltLock.lock(*TiltCal);
 	TiltCalPix = (float*) TiltLock.get();
 	
 	int i;
 	for(i=0; i<(((2*nCals)+1)*((2*nCals)+1));i++)//copying(loading) calibration images into new images
 	{
 		XshPix[i] = TiltCalPix[i];
+		YshPix[i] = TiltCalPix[(int)(i + (((2 * nCals) + 1)*((2 * nCals) + 1)))];
 	}
-	for(i=0; i<(((2*nCals)+1)*((2*nCals)+1));i++)
-	{
-		YshPix[i] = TiltCalPix[(int)(i + (((2*nCals)+1)*((2*nCals)+1)))];
-	}
-
+	//for(i=0; i<(((2*nCals)+1)*((2*nCals)+1));i++)
+	//{
+	//	
+	//}
+	DigitalMicrograph::Result("Loaded Xsh and Ysh images\n");
 	return (true);
 
 }
 
-bool Collect::LoadTiltCalibTagInfo()
+bool Collect::LoadTiltCalibTagInfo(DigitalMicrograph::Image* TiltCal)
 {
 	DigitalMicrograph::TagGroup TiltCalTags;
+	TiltCalTags = DigitalMicrograph::ImageGetTagGroup(*TiltCal);
 
 	DigitalMicrograph::TagGroupGetTagAsFloat(TiltCalTags,"Info:Alpha",&alpha); //not in script?
 	DigitalMicrograph::TagGroupGetTagAsFloat(TiltCalTags,"Info:Disc Radius",&Rr);
@@ -72,6 +115,7 @@ bool Collect::LoadTiltCalibTagInfo()
 	DigitalMicrograph::TagGroupGetTagAsFloat(TiltCalTags,"Shifts:yShpX",&yShpX);
 	DigitalMicrograph::TagGroupGetTagAsFloat(TiltCalTags,"Shifts:yShpY",&yShpY);
 
+	DigitalMicrograph::Result("Tag information loaded...\n");
 	return (true);
 }
 
@@ -91,7 +135,7 @@ void Collect::DoCollection()
 	mag=ExtraGatan::EMGetMagnification();
 	DigitalMicrograph::Result("Finished initial setup\n");
 //Main program
-
+	DigitalMicrograph::Result("Rr = " + boost::lexical_cast<std::string>(Rr)+"\n");
 	//Check microscope status before starting
 	ExtraGatan::EMChangeMode("DIFF");
 
@@ -109,20 +153,22 @@ void Collect::DoCollection()
 
 	pathname=DigitalMicrograph::PathConcatenate( DigitalMicrograph::GetApplicationDirectory("common_app_data",0),"Reference Images\\");
 	DigitalMicrograph::Result("About to load calibration images...\n");
-	if(!LoadTiltCalibImages()) // attempt to load calibration images
+	if(!LoadTiltCalibImages(&TiltCal, &Xsh, &Ysh)) // attempt to load calibration images
 	{
 		DigitalMicrograph::OkDialog("Could not load Calibration Images\nPlease run calibration");
 		DigitalMicrograph::Result("Collection stopped due to loading calibration error");
 		return;
 	}
 	DigitalMicrograph::Result("About to load tag info...\n");
-	if(!LoadTiltCalibTagInfo())
+	if(!LoadTiltCalibTagInfo(&TiltCal))
 	{
 		DigitalMicrograph::OkDialog("Could not load Calibration Image Tag Information\nPlease run calibration or try changing path");
 		DigitalMicrograph::Result("Collection stppped due to loading calibration tag information error");
 		return;
 	}
 
+
+	DigitalMicrograph::ImageDocumentShowAtPosition(DigitalMicrograph::ImageGetOrCreateImageDocument(TiltCal), 15, 30);
 
 	xCal = (0.8*_r)/(2*nCals); // distance between calibration points in pixels
 	yCal = (0.8*_b)/(2*nCals);
@@ -153,101 +199,121 @@ void Collect::DoCollection()
 
 
 	//Stop any current camera viewer
-	DigitalMicrograph::Result("Stopping any current camera viewer...\n");
-	Gatan::CM::StopCurrentCameraViewer(true);
+	try
+	{
+		DigitalMicrograph::Result("Stopping any current camera viewer...\n");
+		Gatan::CM::StopCurrentCameraViewer(true);
+	}
+	catch (...)
+	{
+		DigitalMicrograph::OkDialog("Couldn't stop camera properly, try again!");
+		return;
+	}
+
+	DigitalMicrograph::Result("Stopped any current camera viewer");
+
 
 	//Start the camera running in fast mode
 	//Use current camera
-	img1 = ExtraGatan::Acquire(img1, binning, &quit, &success, expo);
-	img1.DataChanged();
-	DigitalMicrograph::ImageDocumentShowAtPosition(DigitalMicrograph::ImageGetOrCreateImageDocument(img1),15,30); //Returns an image document containing the image, creating one if necessary.
-	DigitalMicrograph::SetWindowSize(img1, 200, 200);// may need to edit values
-	long data_type = DigitalMicrograph::GetDataType(img1);
-	DigitalMicrograph::Get2DSize(img1, &imgX, &imgY);
-
-	//Create 3D destination data stack
-	DigitalMicrograph::Result("Creating CBED 3D stack image...\n");
-	CBED = DigitalMicrograph::RealImage("CBED Stack",4,imgX,imgY,nPts);
-	CBEDLock.lock(CBED);
-	CBEDPix = (float*) CBEDLock.get();
-
-	int ii;
-	for(ii=0; ii<(imgX*imgY*nPts); ii++)
+	try
 	{
-		CBEDPix[ii]=0;
-	}
+		DigitalMicrograph::Sleep(sleeptime);
+		img1 = ExtraGatan::Acquire(binning, &quit, &success, expo);
+		img1.DataChanged();
+		DigitalMicrograph::UpdateImage(img1);
+		DigitalMicrograph::ImageDocumentShowAtPosition(DigitalMicrograph::ImageGetOrCreateImageDocument(img1), 15, 30); //Returns an image document containing the image, creating one if necessary.
+		DigitalMicrograph::SetWindowSize(img1, 200, 200);// may need to edit values
+		long data_type = DigitalMicrograph::GetDataType(img1);
+		DigitalMicrograph::Get2DSize(img1, &imgX, &imgY);
 
-	DigitalMicrograph::ImageDocumentShowAtPosition(DigitalMicrograph::ImageGetOrCreateImageDocument(CBED),230,30); //Returns an image document containing the image, creating one if necessary.
-	DigitalMicrograph::SetWindowSize(CBED, 200, 200);// may need to edit values
+		//Create 3D destination data stack
+		DigitalMicrograph::Result("Creating CBED 3D stack image...\n");
+		CBED = DigitalMicrograph::RealImage("CBED Stack", 4, imgX, imgY, nPts);
+		CBEDLock.lock(CBED);
+		CBEDPix = (float*)CBEDLock.get();
 
-	//Go to first point
-	int iii, jjj;
-	long pt=0;
-	GetCoordsFromNTilts(nTilts, pt, iii, jjj);
-	//Tilts to be applied, in pixels
-	pX = iii*tInc;
-	pY = jjj*tInc;
+		DigitalMicrograph::Result("Making it 0...\n");
+		int ii;
+		for (ii = 0; ii < (imgX*imgY*nPts); ii++)
+		{
+			CBEDPix[ii] = 0;
+		}
+		
+		DigitalMicrograph::ImageDocumentShowAtPosition(DigitalMicrograph::ImageGetOrCreateImageDocument(CBED), 230, 30); //Returns an image document containing the image, creating one if necessary.
+		DigitalMicrograph::SetWindowSize(CBED, 200, 200);// may need to edit values
 
-	//Tilt to be applied, in DAC numbers
-	tX = TiltX0 + xTpX*pX + yTpX*pY;
-	tY = TiltY0 + xTpY*pY + yTpY*pY;
-	//linear interpolation for beam shift correction
-	nX = floor(pX/xCal);
-	nY = floor(pY/yCal);
-	nnX = nX + nCals;//pixel locations in calibration image
-	nnY = nY + nCals;
+		//Go to first point
+		int iii, jjj;
+		long pt = 0;
+		GetCoordsFromNTilts(nTilts, pt, iii, jjj);
+		//Tilts to be applied, in pixels
+		pX = (float)iii*tInc;
+		pY = (float)jjj*tInc;
 
-	DigitalMicrograph::Result("Interpolating...\n");
-	//The 4 surrounding shift calibrations
-	sX=ExtraGatan::Interpolate(&Xsh,xCal,yCal,pX,nX,pY,nY,nnX,nnY);
-	sY=ExtraGatan::Interpolate(&Ysh,xCal,yCal,pX,nX,pY,nY,nnX,nnY);
+		//Tilt to be applied, in DAC numbers
+		tX = (float)TiltX0 + xTpX*pX + yTpX*pY;//final/desired DAC coordinates/position
+		tY = (float)TiltY0 + xTpY*pY + yTpY*pY;
+		//linear interpolation for beam shift correction
+		nX = floor(pX / xCal);//xCal is distance between calibration points in pixles
+		nY = floor(pY / yCal);
+		nnX = nX + nCals;//pixel locations in calibration image
+		nnY = nY + nCals;
 
-	//Shift correction vector
-	sX = ShiftX0 + sX*xShpX + sY*yShpX; //may not need????
-	sY = ShiftY0 + sX*xShpY + sY*yShpY;//may not need????
-	DigitalMicrograph::Result("Potential failure here with shift values sent to microscope...\n");
-	//Set tilt and shift
-	ExtraGatan::ABSShift((long)ExtraGatan::round(sX),(long)ExtraGatan::round(sY));
-	ExtraGatan::ABSTilt((long)ExtraGatan::round(tX),(long)ExtraGatan::round(tY));
-	DigitalMicrograph::Sleep(sleeptime);
+		float corX, corY;
 
-	//Start acquisition
-	//NB define variables outside try/catch
-	int iiii, jjjj;
-	DigitalMicrograph::Result("Starting acquisition...\n");
+		DigitalMicrograph::Result("Interpolating...\n");
+		//The 4 surrounding shift calibrations
+		corX = (float)ExtraGatan::altInterpolate(&Xsh, xCal, yCal, pX, nX, pY, nY, nnX, nnY);
+		corY = (float)ExtraGatan::altInterpolate(&Ysh, xCal, yCal, pX, nX, pY, nY, nnX, nnY);
+
+		//Shift correction vector
+		sX = (float)ShiftX0 + corX*xShpX + corY*yShpX; 
+		sY = (float)ShiftY0 + corX*xShpY + corY*yShpY;
+		DigitalMicrograph::Result("Potential failure here with shift values sent to microscope...\n");
+		//Set tilt and shift
+		ExtraGatan::ABSShift((long)ExtraGatan::round(sX), (long)ExtraGatan::round(sY));
+		ExtraGatan::ABSTilt((long)ExtraGatan::round(tX), (long)ExtraGatan::round(tY));
+		DigitalMicrograph::Sleep(sleeptime);
+
+		//Start acquisition
+		//NB define variables outside try/catch
+		int iiii, jjjj;
+		DigitalMicrograph::Result("Starting acquisition...\n");
+	
 	try
 	{
 		//may need to move display img1 to here
+		DigitalMicrograph::UpdateImage(img1);
 		while(pt<nPts)
 		{
 
 			DigitalMicrograph::OpenAndSetProgressWindow("Acquiring Images for CBED stack",(boost::lexical_cast<std::string>(ExtraGatan::round(((float)pt/nPts)*100))+"%").c_str(),"");
-			
+			DigitalMicrograph::UpdateImage(img1);
 			GetCoordsFromNTilts(nTilts, pt, iiii, jjjj);
 			//tX and tY as a fraction of image width
 			pX = iiii*tInc;//in pixels
 			pY = jjjj*tInc;
 
-			tX = TiltX0 + xTpX*pX + yTpX*pY;
-			tY = TiltY0 + xTpY*pX + yTpY*pY;
+			tX = (float)TiltX0 + xTpX*pX + yTpX*pY;
+			tY = (float)TiltY0 + xTpY*pX + yTpY*pY;
 			//linear interpolation for beam shift correction
-			nX = floor(pX/xCal);
+			nX = floor(pX/xCal);//xcal is distance between calibration points in pixels
 			nY = floor(pY/yCal);
 			nnX = nX+nCals;//pixel locations in calibration image
-			nnY = nY+nCals;
+			nnY = nY+nCals;//nCals is half tiltcal img width (8)
 			//The 4 surrounding shift calibrations
-			sX = ExtraGatan::Interpolate(&Xsh,xCal,yCal,pX,nX,pY,nY,nnX,nnY);
-			sY = ExtraGatan::Interpolate(&Ysh,xCal,yCal,pX,nX,pY,nY,nnX,nnY);
+			corX = ExtraGatan::altInterpolate(&Xsh,xCal,yCal,pX,nX,pY,nY,nnX,nnY);
+			corY = ExtraGatan::altInterpolate(&Ysh,xCal,yCal,pX,nX,pY,nY,nnX,nnY);
 
-			sX = ShiftX0 + sX*xShpX + sY*yShpX;//may not need
-			sY = ShiftY0 + sX*xShpY + sY*yShpY;//may not need
+			sX = ShiftX0 + corX*xShpX + corY*yShpX;//may not need
+			sY = ShiftY0 + corX*xShpY + corY*yShpY;//may not need
 			//set tilt and shift
 
 			ExtraGatan::ABSShift((long)ExtraGatan::round(sX),(long)ExtraGatan::round(sY));
 			ExtraGatan::ABSTilt((long)ExtraGatan::round(tX),(long)ExtraGatan::round(tY));
 			DigitalMicrograph::Sleep(sleeptime);
 
-			img1 = ExtraGatan::Acquire(img1,binning,&quit,&success,expo);
+			img1 = ExtraGatan::Acquire(binning,&quit,&success,expo);
 			img1.DataChanged();
 			DigitalMicrograph::UpdateImage(img1);
 
@@ -259,8 +325,12 @@ void Collect::DoCollection()
 				CBEDPix[pt*imgX*imgY + ii] = img1Pix[ii];//copying current image into CBED stack
 			}
 
+			//std::copy(img1Pix, img1Pix + (imgX*imgY), CBEDPix + (pt*imgX*imgY));
+
+
 			CBED.DataChanged(); //may not work
 			DigitalMicrograph::UpdateImage(CBED); //may not work
+			
 
 			pt++;
 		}//end of while
@@ -280,7 +350,7 @@ void Collect::DoCollection()
 	DigitalMicrograph::TagGroupSetTagAsFloat(CBEDGroup,"Info:Magnification",mag);
 	DigitalMicrograph::TagGroupSetTagAsFloat(CBEDGroup,"Info:Alpha",alpha);
 	DigitalMicrograph::TagGroupSetTagAsFloat(CBEDGroup,"Info:Spot size",spot);
-	DigitalMicrograph::TagGroupSetTagAsFloat(CBEDGroup,"Info:Radius",Rr);
+	DigitalMicrograph::TagGroupSetTagAsFloat(CBEDGroup,"Info:Disc Radius",Rr);
 	
 	DigitalMicrograph::TagGroupSetTagAsFloat(CBEDGroup,"Tilts:xTpX",xTpX);
 	DigitalMicrograph::TagGroupSetTagAsFloat(CBEDGroup,"Tilts:xTpY",xTpY);
@@ -293,7 +363,7 @@ void Collect::DoCollection()
 	DigitalMicrograph::TagGroupSetTagAsFloat(CBEDGroup,"Shifts:yShpY",yShpY);
 
 	//Gain and Dark ref correction
-	std::string DMpathname = DigitalMicrograph::PathConcatenate(DigitalMicrograph::GetApplicationDirectory("common_app_data",true),"Reference Images\\");
+	std::string DMpathname = DigitalMicrograph::PathConcatenate(DigitalMicrograph::GetApplicationDirectory("common_app_data",false),"Reference Images\\"); //was true?
 	pathname = "C:\\ProgramData\\Gatan\\Reference Images\\";
 	std::string refpath = DMpathname+"D-ED_DarkReference_Binning"+boost::lexical_cast<std::string>(binning)+".dm4";
 	DigitalMicrograph::Result("Loading reference images...\n");
@@ -301,7 +371,8 @@ void Collect::DoCollection()
 	{
 		if(DigitalMicrograph::DoesFileExist(refpath))
 			{
-				Dark.operator=(DigitalMicrograph::NewImageFromFile(refpath));
+			//	Dark.operator=(DigitalMicrograph::NewImageFromFile(refpath));
+			Dark = DigitalMicrograph::NewImageFromFile(refpath);
 			}
 		if(!DigitalMicrograph::DoesFileExist(refpath))
 			{
@@ -311,7 +382,7 @@ void Collect::DoCollection()
 	}
 	catch(...)
 	{
-
+		DigitalMicrograph::Result("Failed to load reference images\n");
 	}
 
 	try
@@ -331,6 +402,12 @@ void Collect::DoCollection()
 	{
 
 	}
+	
+
+	DigitalMicrograph::ImageDocumentShowAtPosition(DigitalMicrograph::ImageGetOrCreateImageDocument(Dark), 230, 30); 
+
+	DigitalMicrograph::ImageDocumentShowAtPosition(DigitalMicrograph::ImageGetOrCreateImageDocument(Gain), 230, 30);
+
 
 	pt=0;
 	DigitalMicrograph::Result("Correcting images using reference images");
@@ -338,13 +415,16 @@ void Collect::DoCollection()
 	float* DarkPix = (float*) DarkLock.get();
 	Gatan::PlugIn::ImageDataLocker GainLock(Gain);
 	float* GainPix = (float*) GainLock.get();
-	for(pt=0;pt<nPts;pt++) // going through all stack images
+//	for (pt = 0; pt < nPts; pt++) // going through all stack images
+	while (pt<nPts)
 	{
+		DigitalMicrograph::OpenAndSetProgressWindow("Correecting CBED stack images using reference images", (boost::lexical_cast<std::string>(ExtraGatan::round(((float)pt / nPts) * 100)) + "%").c_str(), "");
 		for (ii=0; ii<imgX*imgY; ii++)
 			{
 				CBEDPix[pt*imgX*imgY + ii]-=DarkPix[ii];//correcting each pixel
 				CBEDPix[pt*imgX*imgY + ii]/=GainPix[ii];
 			}
+		pt++;
 	}
 	float Min, Max;
 	DigitalMicrograph::ImageCalculateMinMax(CBED,1,0,&Min,&Max);
@@ -359,11 +439,16 @@ void Collect::DoCollection()
 			DigitalMicrograph::DeleteFileA(DMpathname+"CBED_Stack.dm4");
 		}
 		DigitalMicrograph::SaveImage(CBED,(DMpathname+"CBED_Stack.dm4"));
+		DigitalMicrograph::Result("CBED stack save file path: " + DMpathname + "\n");
 	}
 	//reset tilts to original values
 	ExtraGatan::ResetBeam();
 	DigitalMicrograph::Result("Beam reset to inital position");
-
+	}
+	catch (...)
+	{
+		DigitalMicrograph::Result("Error has occurred\n");
+	}
 	//End of main program
 	return;
 }

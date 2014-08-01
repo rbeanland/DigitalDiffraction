@@ -45,7 +45,9 @@ public:
 
 	float Rr,spot,xTpX,xTpY,yTpX,yTpY,xShpX,xShpY,yShpX,yShpY;
 	long nCals;
-	bool LoadTiltCalibTagInfo();
-	bool LoadTiltCalibImages();
+	bool LoadTiltCalibTagInfo(DigitalMicrograph::Image*);
+	bool LoadTiltCalibImages(DigitalMicrograph::Image*, DigitalMicrograph::Image*, DigitalMicrograph::Image*);
 	void DoCollection();
+
+	void TestDia();
 };

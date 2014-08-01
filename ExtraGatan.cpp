@@ -1419,21 +1419,70 @@ void ExtraGatan::CircularMask2D(DigitalMicrograph::Image *input,long pix_X,long 
 	long currentX, currentY;
 	float xdist, ydist, dist;
 	
-	for(i=0; i<imgX*imgY; i++)
+	//for(i=0; i<imgX*imgY; i++)
+	//{
+	//	GetPixelXandY(i,&currentX,&currentY,imgX);
+	//	xdist = (float) (abs(currentX-pix_X));
+	//	ydist = (float) (abs(currentY-pix_Y));
+	//	//dist =(pow(xdist,2) + pow(ydist,2));
+	//	dist = (xdist*xdist) + (ydist*ydist);
+	//	
+	//	//if(dist>(pow(radius,2)+radius-1)) //
+	//	if (dist>(radius*radius))
+	//	{
+	//		inPix[i] = 0;
+	//	}
+	//	
+	//}
+
+	for (i = 0; i < imgX; i++)
 	{
-		GetPixelXandY(i,&currentX,&currentY,imgX);
-		xdist = (float) (abs(currentX-pix_X));
-		ydist = (float) (abs(currentY-pix_Y));
-		//dist =(pow(xdist,2) + pow(ydist,2));
-		dist = (xdist*xdist) + (ydist*ydist);
-		
-		//if(dist>(pow(radius,2)+radius-1)) //
-		if (dist>(radius*radius))
+		for (int j = 0; j < imgY; j++)
 		{
-			inPix[i] = 0;
+			
+			xdist = (float)(abs(i - pix_X));
+			ydist = (float)(abs(j - pix_Y));
+			dist = (xdist*xdist) + (ydist*ydist);
+
+			if (dist>(radius*radius))
+			{
+				inPix[j*imgX + i] = 0;
+			}
 		}
-		
 	}
+
+}
+
+void ExtraGatan::InvCircularMask2D(DigitalMicrograph::Image *input, long pix_X, long pix_Y, float radius)//pix_X pix_Y are centre pixel coords
+{
+	long imgX, imgY;
+
+	Gatan::PlugIn::ImageDataLocker inputlock(*input);
+	float* inPix = (float*)inputlock.get();
+	DigitalMicrograph::Get2DSize(*input, &imgX, &imgY);
+	long centre = GetDataLockRange(imgX, pix_X, pix_Y);
+
+	int i;
+	long currentX, currentY;
+	float xdist, ydist, dist;
+
+
+	for (i = 0; i < imgX; i++)
+	{
+		for (int j = 0; j < imgY; j++)
+		{
+
+			xdist = (float)(abs(i - pix_X));
+			ydist = (float)(abs(j - pix_Y));
+			dist = (xdist*xdist) + (ydist*ydist);
+
+			if (dist<(radius*radius))
+			{
+				inPix[j*imgX + i] = 0;
+			}
+		}
+	}
+
 }
 
 void ExtraGatan::InverseCircularMask2D(DigitalMicrograph::Image *input,long pix_X,long pix_Y,float radius)
@@ -2156,6 +2205,30 @@ double ExtraGatan::EMGetBrightness( )
     return params[0].v_float64;
 }
 
+
+double ExtraGatan::altInterpolate(DigitalMicrograph::Image* input, long xCal, long yCal, long pX, long nX, long pY, long nY, long nnX, long nnY)
+{
+	double x00, x10, x01, x11;
+
+	x00 = DigitalMicrograph::GetPixel(*input, nnX, nnY);
+	x10 = DigitalMicrograph::GetPixel(*input, nnX+1, nnY);
+	x01 = DigitalMicrograph::GetPixel(*input, nnX, nnY+1);
+	x11 = DigitalMicrograph::GetPixel(*input, nnX+1, nnY);
+
+	double _ax, _bx, _cx, _dx;
+	_ax = x00;
+	_bx = (x10 - x00) / xCal;
+	_cx = (x01 - x00) / yCal;
+	_dx = (x00 - x01 - x10 + x11) / (xCal*yCal);
+	
+	double corX;
+	corX = _ax + _bx*(pX - nX*xCal) + _cx*(pY - nY*yCal) + _dx*(pX - nX*xCal)*(pY - nY*yCal);
+
+	return(corX);
+
+}
+
+
 float ExtraGatan::Interpolate(DigitalMicrograph::Image* input,long xCal,long yCal,long pX,long nX,long pY,long nY, long nnX, long nnY)
 {
 	long Cal_X, Cal_Y;
@@ -2376,10 +2449,12 @@ void ExtraGatan::DrawRedX(DigitalMicrograph::Image *input)
 		DigitalMicrograph::SetWindowSize(*input,200,200);
 		img_disp = DigitalMicrograph::ImageGetImageDisplay(*input,0);
 		}
+	//setCompCol(left, 1.0, 1.0, 0.0);
+//	setCompCol(right, 1, 0, 0);
 	DigitalMicrograph::ComponentAddChildAtEnd(img_disp,left);
 	DigitalMicrograph::ComponentAddChildAtEnd(img_disp,right);
-	ComponentColour(input,left,1,0,0);
-	ComponentColour(input,right,1,0,0);
+	//ComponentColour(input,left,1,0,0);
+	//ComponentColour(input,right,1,0,0);
 }
 
 long ExtraGatan::MultiLocalPeak(DigitalMicrograph::Image IMG, std::vector<long> *xpos, std::vector<long> *ypos,  std::vector<float> *radii, float minrad,int num)
@@ -2472,4 +2547,39 @@ void ExtraGatan::SafeSave(std::string path, DigitalMicrograph::Image input)
 		if(DigitalMicrograph::DoesFileExist(path))
 		{DigitalMicrograph::DeleteFileA(path);}
 		DigitalMicrograph::SaveImage(input,(path));
+}
+
+float ExtraGatan::maxoftwo(float x, float y)
+{
+	float maxval;
+
+	if (x > y)
+	{
+		return(x);
+	}
+	else
+	{
+		return(y);
+	}
+
+}
+
+void ExtraGatan::setCompCol(DigitalMicrograph::Component annot, float r, float g, float b)
+{
+	static DigitalMicrograph::Function __sFunction = (DM_FunctionToken)NULL;
+	static const char *__sSignature = "void setaCol( long , long , double , double , double )";
+
+	Gatan::PlugIn::DM_Variant params[5];
+
+	long anID = DigitalMicrograph::ComponentGetID(annot);
+	DigitalMicrograph::ImageDocument imdoc = DigitalMicrograph::ComponentGetImageDocument(annot);
+	long imdID = DigitalMicrograph::ImageDocumentGetID(imdoc);
+
+	params[0].v_sint64 = (Gatan::sint64)anID;
+	params[1].v_sint64 = (Gatan::sint64)imdID;
+	params[2].v_float64 = (double)r;
+	params[3].v_float64 = (double)g;
+	params[4].v_float64 = (double)b;
+
+	GatanPlugIn::gDigitalMicrographInterface.CallFunction(__sFunction.get_ptr(), 5, params, __sSignature);
 }
