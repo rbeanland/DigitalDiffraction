@@ -108,7 +108,12 @@ public:
 	static void SafeSave(std::string path, DigitalMicrograph::Image input);
 
 	static float maxoftwo(float, float);
+	static float minoftwo(float, float);
 	static void setCompCol(DigitalMicrograph::Component annot, float r, float g, float b);
 	static void ExtraGatan::InvCircularMask2D(DigitalMicrograph::Image *input, long pix_X, long pix_Y, float radius);
 	static double ExtraGatan::altInterpolate(DigitalMicrograph::Image* input, long xCal, long yCal, long pX, long nX, long pY, long nY, long nnX, long nnY);
+	static void  ExtraGatan::sAcquire(DigitalMicrograph::Image* Acquired, int bin, bool* quit, bool* success, double expo);
+	static float ExtraGatan::Min3D(DigitalMicrograph::Image IMG1);
+	static float ExtraGatan::Max3D(DigitalMicrograph::Image IMG1);
+
 };

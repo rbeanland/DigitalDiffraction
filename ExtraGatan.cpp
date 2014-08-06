@@ -118,16 +118,16 @@ float ExtraGatan::Min(DigitalMicrograph::Image IMG1)
 	float* IMG1Pix = (float*)IMG1Lock.get(); //points to the first member of the array to initialise it
 	int pixnum = IMG1_y*IMG1_x; //determines total size of array
 	int i;
-	float min = FLT_MAX;
+	float currmin = FLT_MAX;
 	for (i = 0; i<pixnum; i++)
 	{
-		if (abs(IMG1Pix[i])<min)
+		if (IMG1Pix[i]<currmin)
 		{
-			min = abs(IMG1Pix[i]);
+			currmin = IMG1Pix[i];
 		}
 	}
 	IMG1Lock.~ImageDataLocker(); //deconstruction
-	return(min);
+	return(currmin);
 } //end of Max function
 
 long ExtraGatan::Sum(float* imagepix, int numpixels)
@@ -2553,7 +2553,7 @@ float ExtraGatan::maxoftwo(float x, float y)
 {
 	float maxval;
 
-	if (x > y)
+	if ((x) > (y))
 	{
 		return(x);
 	}
@@ -2563,6 +2563,23 @@ float ExtraGatan::maxoftwo(float x, float y)
 	}
 
 }
+
+
+float ExtraGatan::minoftwo(float x, float y)
+{
+	float minval;
+
+	if ((x) < (y))
+	{
+		return(x);
+	}
+	else
+	{
+		return(y);
+	}
+
+}
+
 
 void ExtraGatan::setCompCol(DigitalMicrograph::Component annot, float r, float g, float b)
 {
@@ -2583,3 +2600,153 @@ void ExtraGatan::setCompCol(DigitalMicrograph::Component annot, float r, float g
 
 	GatanPlugIn::gDigitalMicrographInterface.CallFunction(__sFunction.get_ptr(), 5, params, __sSignature);
 }
+
+
+
+void  ExtraGatan::sAcquire( DigitalMicrograph::Image* Acquired, int bin, bool* quit, bool* success, double expo)
+{
+	//DigitalMicrograph::Image AcquiredImage;
+
+	// Get current DM camera
+	Gatan::Camera::Camera camera;
+	Gatan::uint32 xpixels; //Get from CCD anyway
+	Gatan::uint32 ypixels; //Get from CCD anyway
+	try
+
+	{
+		camera = Gatan::Camera::GetCurrentCamera();
+		Gatan::Camera::CCD_GetSize(camera, &xpixels, &ypixels);
+	}
+	catch (...)
+	{
+		short error;
+		long context;
+		DigitalMicrograph::GetException(&error, &context);
+		DigitalMicrograph::ErrorDialog(error);
+		DigitalMicrograph::OpenAndSetProgressWindow("No Camera Detected", "", "");
+		*quit = true;
+		//return(*Acquired);
+	}
+
+	bool inserted = false;
+	try
+	{
+		inserted = Gatan::Camera::GetCameraInserted(camera);
+	}
+	catch (...)
+
+	{
+		short error;
+		long context;
+		DigitalMicrograph::GetException(&error, &context);
+		DigitalMicrograph::ErrorDialog(error);
+		DigitalMicrograph::OpenAndSetProgressWindow("Couldn't check camera", "status", "");
+		*quit = true;
+		//return(*Acquired);
+	}
+
+	if (inserted != true)
+
+	{
+		DigitalMicrograph::OpenAndSetProgressWindow("Camera not inserted", "", "");
+		*quit = true;
+		//return(*Acquired);
+	}
+
+	// Want gain normalized imaging unless doing post processing yourself
+	Gatan::Camera::AcquisitionProcessing processing = Gatan::Camera::kGainNormalized;
+	Gatan::Camera::AcquisitionParameters acqparams;
+
+	try
+	{
+		acqparams = Gatan::Camera::CreateAcquisitionParameters(camera, processing, expo, bin, bin, 0, 0, ypixels, xpixels);
+		Gatan::CM::SetDoContinuousReadout(acqparams, true);
+		Gatan::CM::SetQualityLevel(acqparams, 0); // Can't remember if fast or slow :D
+		Gatan::Camera::Validate_AcquisitionParameters(camera, acqparams);
+	}
+
+	catch (...)
+	{
+		short error;
+		long context;
+		DigitalMicrograph::GetException(&error, &context);
+		DigitalMicrograph::ErrorDialog(error);
+		DigitalMicrograph::OpenAndSetProgressWindow("Problem with acquisition", "parameters", "");
+		*quit = true;
+		//return(*Acquired);
+	}
+
+	// NEW BIT FOR ALTERNATE ACQUISITION
+
+	Gatan::CM::AcquisitionPtr acq = CreateAcquisition(camera, acqparams);
+
+	// Turn into script object for my dms function
+
+	DigitalMicrograph::ScriptObject acqtok = DigitalMicrograph::ScriptObjectProxy<Gatan::Camera::AcquisitionImp, DigitalMicrograph::DMObject>::to_object_token(acq.get());
+
+	Gatan::CM::FrameSetInfoPtr fsi = ExtraGatan::GetFrameSetInfoPtr(acqtok);
+
+	Gatan::Camera::AcquisitionImageSourcePtr acqsource = Gatan::Camera::AcquisitionImageSource::New(acq, fsi, 0);
+
+	// Start Acquisition
+
+	acqsource->BeginAcquisition();
+	bool acqprmchanged = false;
+	*Acquired = Gatan::Camera::CreateImageForAcquire(acq, "Acquired");
+
+	if (!acqsource->AcquireTo(*Acquired, true, 0.5f, acqprmchanged))
+
+	{      // Now wait for it to finish again but dont restart if it finishes durign call....
+		while (!acqsource->AcquireTo(*Acquired, false, 0.5f, acqprmchanged))
+
+		{
+			// Waiting for read to finish
+		}
+	}
+	// Probably important...
+	*success = true;
+
+	acqsource->FinishAcquisition();
+	//return(*Acquired);
+}
+
+
+float ExtraGatan::Min3D(DigitalMicrograph::Image IMG1)
+{
+	Gatan::PlugIn::ImageDataLocker  IMG1Lock(IMG1); //makes an array of floats based on the pixel intensities of the two input images
+	long IMG1_x, IMG1_y, IMG_Z;
+	DigitalMicrograph::Get3DSize(IMG1, &IMG1_x, &IMG1_y, &IMG_Z);
+	float* IMG1Pix = (float*)IMG1Lock.get(); //points to the first member of the array to initialise it
+	int pixnum = IMG1_y*IMG1_x*IMG_Z; //determines total size of array
+	int i;
+	float min = FLT_MAX;
+	for (i = 0; i<pixnum; i++)
+	{
+		if (abs(IMG1Pix[i])<min)
+		{
+			min = abs(IMG1Pix[i]);
+		}
+	}
+	IMG1Lock.~ImageDataLocker(); //deconstruction
+	return(min);
+} //end of Min3D function
+
+float ExtraGatan::Max3D(DigitalMicrograph::Image IMG1)
+{
+	Gatan::PlugIn::ImageDataLocker  IMG1Lock(IMG1); //makes an array of floats based on the pixel intensities of the two input images
+	long IMG1_x, IMG1_y, IMG_Z;
+	DigitalMicrograph::Get3DSize(IMG1, &IMG1_x, &IMG1_y, &IMG_Z);
+	float* IMG1Pix = (float*)IMG1Lock.get(); //points to the first member of the array to initialise it
+	int pixnum = IMG1_y*IMG1_x*IMG_Z; //determines total size of array
+	int i;
+	float max = FLT_MIN;
+	for (i = 0; i<pixnum; i++)
+	{
+		if (abs(IMG1Pix[i])>max)
+		{
+			max = abs(IMG1Pix[i]);
+		}
+	}
+	IMG1Lock.~ImageDataLocker(); //deconstruction
+	return(max);
+} //end of Max function
