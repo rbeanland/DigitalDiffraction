@@ -112,7 +112,7 @@ float ExtraGatan::Max(DigitalMicrograph::Image IMG1)
 
 float ExtraGatan::Min(DigitalMicrograph::Image IMG1)
 {
-	Gatan::PlugIn::ImageDataLocker  IMG1Lock(IMG1); //makes an array of floats based on the pixel intensities of the two input images
+	Gatan::PlugIn::ImageDataLocker  IMG1Lock(IMG1); 
 	long IMG1_x, IMG1_y;
 	DigitalMicrograph::Get2DSize(IMG1, &IMG1_x, &IMG1_y);
 	float* IMG1Pix = (float*)IMG1Lock.get(); //points to the first member of the array to initialise it
@@ -217,9 +217,6 @@ std::string ExtraGatan::EMGetImagingOpticsMode() //some other guys code, I don't
                std::string mode = (const char *) params[0].v_c_string;
                return mode;
         } //end of ENGet...
-
-
-
 
 
 
@@ -429,7 +426,6 @@ bool ExtraGatan::EMChangeMode(std::string mode_want)
 	{
 		try
 		{
-			
 			clickedOK = DigitalMicrograph::ContinueCancelDialog(finalSplash);
 		}
 		catch(...)
@@ -456,18 +452,9 @@ void ExtraGatan::EMBeamCentre(std::string Tag_Path, DigitalMicrograph::Image IMG
 {
 	DigitalMicrograph::Result("In EMBeamCentre\n");
 	long ShiftX0, ShiftY0;
-	//DigitalMicrograph::String xShpY, yShpX, yShpY, xShpX;
 	float xShpY, yShpX, yShpY, xShpX;
 	EMGetBeamShift(&ShiftX0, &ShiftY0);
 	DigitalMicrograph::TagGroup PersistentTags = DigitalMicrograph::GetPersistentTagGroup();
-	//std::string xstringx = Tag_Path + "xShpX"; //creating string
-	//const char* xtagx = xstringx.c_str(); //converting to c style string, type needed by DM tag functions
-	//std::string xstringy = Tag_Path + "xShpY";
-	//const char* xtagy = xstringy.c_str();
-	//std::string ystringx = Tag_Path + "yShpX";
-	//const char* ytagx = ystringx.c_str();
-	//std::string ystringy = Tag_Path + "yShpY";
-	//const char* ytagy = ystringy.c_str();
 	DigitalMicrograph::Result("About to get tags...\n");
 	DigitalMicrograph::TagGroupGetTagAsFloat(PersistentTags,(Tag_Path + "xShpX").c_str(), &xShpX);
 	DigitalMicrograph::TagGroupGetTagAsFloat(PersistentTags, (Tag_Path + "xShpY").c_str(), &xShpY);
@@ -475,17 +462,9 @@ void ExtraGatan::EMBeamCentre(std::string Tag_Path, DigitalMicrograph::Image IMG
 	DigitalMicrograph::TagGroupGetTagAsFloat(PersistentTags, (Tag_Path + "yShpY").c_str(), &yShpY);
 	DigitalMicrograph::Result("xShpX ="+boost::lexical_cast<std::string>(xShpX)+"\n");
 	DigitalMicrograph::Result("Got tags...\n");
-	//std::string xShpXstr = xShpX.operator std::string();//casting to std::string, converting from DM string to std string
-	//int xShpXint = boost::lexical_cast<int>(xShpXstr);//casting the std string to int
-	//std::string xShpYstr = xShpY.operator std::string();
-	//int xShpYint = boost::lexical_cast<int>(xShpYstr);
-	//std::string yShpXstr = yShpX.operator std::string();
-	//int yShpXint = boost::lexical_cast<int>(yShpXstr);
-	//std::string yShpYstr = yShpY.operator std::string();
-	//int yShpYint = boost::lexical_cast<int>(yShpYstr);
+	
 	long x0, y0; // coords of untilted beam (in pixels)
 	DigitalMicrograph::Result("Getting max pixel intensity...\n");
-	//float maxval = Max(IMG1, &x0, &y0);
 	float maxval = ExtraGatan::Max(IMG1);
 	ExtraGatan::PixelPos(IMG1, maxval, &x0, &y0, false);
 	long imgx, imgy;
@@ -505,7 +484,6 @@ void ExtraGatan::EMBeamCentre(std::string Tag_Path, DigitalMicrograph::Image IMG
 	//ExtraGatan::ABSShift(xCentre, yCentre);
 	DigitalMicrograph::EMBeamShift(x1dacsh, y1dacsh);
 	DigitalMicrograph::Result("Finished in EMBeam Centre, beam should be at centre of image\n");
-	
 	//remember to call a sleep function in the main after calling this function
 }
 
@@ -622,7 +600,7 @@ float ExtraGatan::DiscSize(DigitalMicrograph::Image IMG, long *x0, long *y0, int
 	 iDisc = DigitalMicrograph::ImageClone(Disc);
 	 MaxDiscX = imgX/100; //think max disc size, smaller than image
 	 MaxDiscY = imgY/100;
-	 int threadnum;//not used????
+	 //int threadnum;//not used????
 	 std::vector<float> CCmaxs;//creating a vector of floats for CCmax??
 	 std::vector<long> xpos, ypos;//creating vectors of longs????
 	PixelPos(IMG,max,&discX,&discY,false); // finding pixel position of disc based on max, the highest pixel intensity of the image
@@ -642,6 +620,7 @@ float ExtraGatan::DiscSize(DigitalMicrograph::Image IMG, long *x0, long *y0, int
 		 #pragma omp for private(CCmax,_x0,Cc,iDisc,actrad,_y0)
 		 for (i=0; i<Rmax*2; i+=1)
 				 {
+					 DigitalMicrograph::OpenAndSetProgressWindow("Finding disc radius...", (boost::lexical_cast<std::string>(i / (2 * Rmax))+"%").c_str(), "");
 						actrad = ((float)i)/2;
 						iDisc = MakeDisc(imgX,imgY,actrad);
 						  //DigitalMicrograph::OpenAndSetProgressWindow("Progress", (boost::lexical_cast<std::string>(i) + ", ").c_str(), "");
@@ -886,7 +865,7 @@ DigitalMicrograph::Image  ExtraGatan::Acquire(int bin, bool* quit, bool* success
        }
 
        // Want gain normalized imaging unless doing post processing yourself
-       Gatan::Camera::AcquisitionProcessing processing = Gatan::Camera::kGainNormalized; 
+       Gatan::Camera::AcquisitionProcessing processing = Gatan::Camera::kUnprocessed; 
        Gatan::Camera::AcquisitionParameters acqparams;
 
        try
@@ -954,8 +933,10 @@ DigitalMicrograph::Image  ExtraGatan::Acquire(DigitalMicrograph::Image AcquiredI
        try
 
        {
+		   DigitalMicrograph::Result("about to get camera...\n");
               camera = Gatan::Camera::GetCurrentCamera();
               Gatan::Camera::CCD_GetSize(camera,&xpixels,&ypixels);
+			  DigitalMicrograph::Result("got camera...\n");
        }
        catch(...)
        {
@@ -971,7 +952,9 @@ DigitalMicrograph::Image  ExtraGatan::Acquire(DigitalMicrograph::Image AcquiredI
        bool inserted = false;
        try
        {
+		   DigitalMicrograph::Result("about to check inserted...\n");
               inserted = Gatan::Camera::GetCameraInserted(camera);
+			  DigitalMicrograph::Result("checked inserted...\n");
        }
        catch(...)
 
@@ -994,15 +977,18 @@ DigitalMicrograph::Image  ExtraGatan::Acquire(DigitalMicrograph::Image AcquiredI
        }
 
        // Want gain normalized imaging unless doing post processing yourself
-       Gatan::Camera::AcquisitionProcessing processing = Gatan::Camera::kGainNormalized; 
+       //Gatan::Camera::AcquisitionProcessing processing = Gatan::Camera::kGainNormalized; 
+	   Gatan::Camera::AcquisitionProcessing processing = Gatan::Camera::kUnprocessed;
        Gatan::Camera::AcquisitionParameters acqparams;
 
        try
        {
+		   DigitalMicrograph::Result("about to create acquisition parameters...\n");
               acqparams = Gatan::Camera::CreateAcquisitionParameters(camera,processing,expo,bin,bin,0,0,ypixels,xpixels);
               Gatan::CM::SetDoContinuousReadout(acqparams,true);
               Gatan::CM::SetQualityLevel(acqparams,0); // Can't remember if fast or slow :D
               Gatan::Camera::Validate_AcquisitionParameters(camera,acqparams);
+			  DigitalMicrograph::Result("validated parameters...\n");
        }
 
        catch(...)
@@ -1017,20 +1003,22 @@ DigitalMicrograph::Image  ExtraGatan::Acquire(DigitalMicrograph::Image AcquiredI
        }
 
        // NEW BIT FOR ALTERNATE ACQUISITION
-
+	   DigitalMicrograph::Result("creating acquisition...\n");
        Gatan::CM::AcquisitionPtr acq = CreateAcquisition( camera, acqparams );
-
+	   DigitalMicrograph::Result("created acquisition...\n");
        // Turn into script object for my dms function
-
+	   DigitalMicrograph::Result("about to get frame info...\n");
        DigitalMicrograph::ScriptObject acqtok = DigitalMicrograph::ScriptObjectProxy<Gatan::Camera::AcquisitionImp,DigitalMicrograph::DMObject>::to_object_token(acq.get());
 
        Gatan::CM::FrameSetInfoPtr fsi = ExtraGatan::GetFrameSetInfoPtr(acqtok);
-
+	   DigitalMicrograph::Result("making new acquisition source...\n");
        Gatan::Camera::AcquisitionImageSourcePtr acqsource = Gatan::Camera::AcquisitionImageSource::New(acq,fsi,0);
-
+	   DigitalMicrograph::Result("made source...\n");
+	   DigitalMicrograph::Result("got info...\n");
        // Start Acquisition
-
+	   DigitalMicrograph::Result("about to BeginAcquisition()...\n");
        acqsource->BeginAcquisition();
+	   DigitalMicrograph::Result("finished BeginAcquisition()...\n");
 	   bool acqprmchanged = false;
 		JunkImg = Gatan::Camera::CreateImageForAcquire(acq,"Acquired");
 
@@ -1038,7 +1026,7 @@ DigitalMicrograph::Image  ExtraGatan::Acquire(DigitalMicrograph::Image AcquiredI
 
     {      // Now wait for it to finish again but dont restart if it finishes durign call....
 		             while(!acqsource->AcquireTo(JunkImg,false,0.5f,acqprmchanged))
-
+						 DigitalMicrograph::Result("waiting for read to finish...\n");
                      {
 						// Waiting for read to finish
                      }
@@ -1051,11 +1039,27 @@ DigitalMicrograph::Image  ExtraGatan::Acquire(DigitalMicrograph::Image AcquiredI
 	float* AquPix = (float*) AquLock.get();
 	int i;
 	long jX, jY;
+	long aX, aY;
+	DigitalMicrograph::ImageDocumentShowAtPosition(DigitalMicrograph::ImageGetOrCreateImageDocument(JunkImg), 230, 30); //Returns an image document containing the image, creating one if necessary.
+
+	DigitalMicrograph::Get2DSize(AcquiredImage, &aX, &aY);
 	DigitalMicrograph::Get2DSize(JunkImg,&jX,&jY);
+
+	DigitalMicrograph::Result("aX, aY = " + boost::lexical_cast<std::string>(aX)+", " + boost::lexical_cast<std::string>(aY)+", jX,jY = " + boost::lexical_cast<std::string>(jX)+", " + boost::lexical_cast<std::string>(jY)+"\n");
+
+	DigitalMicrograph::Result("about to copy to input image...\n");
+
+	if (!DigitalMicrograph::OkCancelDialog("continue?"))
+	{
+		return(AcquiredImage);
+	}
+
+
 	for(i=0; i<jX*jY; i++)
 	{
 		AquPix[i] = JunkPix[i];
 	}
+	DigitalMicrograph::Result("copied to input...\n");
 	AquLock.~ImageDataLocker();
 	JunkLock.~ImageDataLocker();
 	acqsource->FinishAcquisition();
@@ -1162,7 +1166,7 @@ float ExtraGatan::Tiltsize(float dTilt, float *T1X, float *T1Y, float *T2X, floa
 
 
 	 DigitalMicrograph::Sleep(0.02); //may need to change
-	 DigitalMicrograph::Result("sleeping 0.1...\n");
+	 DigitalMicrograph::Result("sleeping 0.02...\n");
 	 *img1 = Acquire(*img1, binning, &quit, &success, expo); // ln139? 
 	 (*img1).DataChanged();
 //////////////////////////////////////////////////////////////////////////
@@ -1301,7 +1305,7 @@ float ExtraGatan::Shiftsize(float dShift, float *Sh1X, float *Sh1Y,float *Sh2X,f
 	 s_imgCC = DigitalMicrograph::CrossCorrelate(s_img1, s_img0);
 
 	 (s_imgCC).DataChanged();
-	 DigitalMicrograph::UpdateImage(s_imgCC);
+	 //DigitalMicrograph::UpdateImage(s_imgCC);
 	 long x,y;//coords of shifted beam
 	 maxval = Max(s_imgCC);
 	 PixelPos(s_imgCC,maxval,&x,&y, false);
@@ -1322,7 +1326,7 @@ float ExtraGatan::Shiftsize(float dShift, float *Sh1X, float *Sh1Y,float *Sh2X,f
 	 ////////////////////////////
 	 s_imgCC = DigitalMicrograph::CrossCorrelate(s_img1, s_img0);
 
-	 DigitalMicrograph::UpdateImage(s_imgCC);
+	 //DigitalMicrograph::UpdateImage(s_imgCC);
 	 s_imgCC.DataChanged();
 	 maxval = Max(s_imgCC);
 	 PixelPos(s_imgCC,maxval,&x,&y, false);
@@ -1335,7 +1339,8 @@ float ExtraGatan::Shiftsize(float dShift, float *Sh1X, float *Sh1Y,float *Sh2X,f
 	 ABSShift(sX,sY);// shifting beam in y direction using new dshift
 	 DigitalMicrograph::Sleep(sleeptime);//have to give the microscope time to respond
 	 s_img1 = Acquire(s_img1, binning,&quit,&success,expo);//shifted image
-	 DigitalMicrograph::UpdateImage(s_img1);
+	 //DigitalMicrograph::UpdateImage(s_img1);
+	 DigitalMicrograph::ImageDataChanged(s_img1);
 	 ///////////////////////////////////////
 	//s_imgCC=CrossCorr(s_imgCC,s_img0,s_img1);
 	 /////////////////////////////////
@@ -1352,6 +1357,11 @@ float ExtraGatan::Shiftsize(float dShift, float *Sh1X, float *Sh1Y,float *Sh2X,f
 	 DigitalMicrograph::ImageDocumentClose(s_img0.GetOrCreateImageDocument(),false);//closing image windows when finished
 	 DigitalMicrograph::ImageDocumentClose(s_img1.GetOrCreateImageDocument(),false);
 	 DigitalMicrograph::ImageDocumentClose(s_imgCC.GetOrCreateImageDocument(),false);
+
+	 DigitalMicrograph::DeleteImage(s_img0);
+	 DigitalMicrograph::DeleteImage(s_img1);
+	 DigitalMicrograph::DeleteImage(s_imgCC);
+
 	 DigitalMicrograph::Result("Shiftsize function complete\n");
 	 return(dShift);
 }
@@ -2223,9 +2233,7 @@ double ExtraGatan::altInterpolate(DigitalMicrograph::Image* input, long xCal, lo
 	
 	double corX;
 	corX = _ax + _bx*(pX - nX*xCal) + _cx*(pY - nY*yCal) + _dx*(pX - nX*xCal)*(pY - nY*yCal);
-
 	return(corX);
-
 }
 
 
@@ -2654,7 +2662,8 @@ void  ExtraGatan::sAcquire( DigitalMicrograph::Image* Acquired, int bin, bool* q
 	}
 
 	// Want gain normalized imaging unless doing post processing yourself
-	Gatan::Camera::AcquisitionProcessing processing = Gatan::Camera::kGainNormalized;
+	//Gatan::Camera::AcquisitionProcessing processing = Gatan::Camera::kGainNormalized;
+	Gatan::Camera::AcquisitionProcessing processing = Gatan::Camera::kUnprocessed;
 	Gatan::Camera::AcquisitionParameters acqparams;
 
 	try
@@ -2663,7 +2672,7 @@ void  ExtraGatan::sAcquire( DigitalMicrograph::Image* Acquired, int bin, bool* q
 		Gatan::CM::SetDoContinuousReadout(acqparams, true);
 		Gatan::CM::SetQualityLevel(acqparams, 0); // Can't remember if fast or slow :D
 		Gatan::Camera::Validate_AcquisitionParameters(camera, acqparams);
-	}
+	} 
 
 	catch (...)
 	{
@@ -2692,21 +2701,53 @@ void  ExtraGatan::sAcquire( DigitalMicrograph::Image* Acquired, int bin, bool* q
 
 	acqsource->BeginAcquisition();
 	bool acqprmchanged = false;
-	*Acquired = Gatan::Camera::CreateImageForAcquire(acq, "Acquired");
 
-	if (!acqsource->AcquireTo(*Acquired, true, 0.5f, acqprmchanged))
+	DigitalMicrograph::Image AcquiredImage;
 
-	{      // Now wait for it to finish again but dont restart if it finishes durign call....
-		while (!acqsource->AcquireTo(*Acquired, false, 0.5f, acqprmchanged))
 
+
+	try
+	{
+		AcquiredImage = Gatan::Camera::CreateImageForAcquire(acq, "Acquired Image");
+	}
+	catch (...)
+	{
+		short error;
+		long context;
+		DigitalMicrograph::GetException(&error, &context);
+		DigitalMicrograph::ErrorDialog(error);
+		DigitalMicrograph::Result("Couldn't Create Image for Acquire\n");
+		return;
+	}
+
+	
+	try
+	{
+		if (!acqsource->AcquireTo(*Acquired, true, 0.5f, acqprmchanged))
 		{
-			// Waiting for read to finish
+			// Now wait for it to finish again but dont restart if it finishes durign call....
+			while (!acqsource->AcquireTo(*Acquired, false, 0.5f, acqprmchanged))
+			{
+				// Waiting for read to finish
+			}
 		}
 	}
-	// Probably important...
-	*success = true;
+	catch (...)
+	{
+		short error;
+		long context;
+		DigitalMicrograph::GetException(&error, &context);
+		DigitalMicrograph::ErrorDialog(error);
+		DigitalMicrograph::OpenAndSetProgressWindow("Couldn't Acquire Image", "", "");
+		return;
+	}
+	//Gatan::Camera::AcquireImage
+		// Probably important...
+		*success = true;
 
 	acqsource->FinishAcquisition();
+
+	*Acquired = AcquiredImage;
 	//return(*Acquired);
 }
 

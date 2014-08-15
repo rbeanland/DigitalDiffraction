@@ -7,6 +7,9 @@
 #include "ExtraGatan.h"
 #include "DMPlugInCamera.h"
 
+#include "Acquisition.h"
+
+
 	  //***     Digital Electron Diffraction      ***\\
 	 //** Richard Beanland r.beanland@warwick.ac.uk **\\
 	//**    Joel C Forster j.c.forster@warwick.ac.uk **\\
@@ -23,7 +26,7 @@ public:
 			_l, 
 			_b, 
 			_r, //camera pixel coordinates
-			sleeptime; //delay while waiting for microscope to respond, to be converted to plugin input
+			sleeptime; //delay while waiting for microscope to respond, controlled by text box
 	DigitalMicrograph::Image img1, img0, imgCC; // live image, reference image & cross-correlation
 	DigitalMicrograph::ScriptObject img_src;
 
@@ -39,6 +42,8 @@ public:
 
 	DigitalMicrograph::Image Xsh, Ysh, TiltCal;
 
+	DigitalMicrograph::TagGroup Persistent;
+
 	// variables used in subroutines, may not be needed to be declared here
 	bool acq_paramas_changed;
 	float max_wait;
@@ -51,9 +56,26 @@ public:
 	//EMChangeMode
 	std::string mode_want, mode_is; // may not need both of these, or either, function in ExtraGatan
 
-	void DoCalibration(); // aka main for calibration
+	void DoCalibration(CProgressCtrl&); // aka main for calibration
 	void GetCoordsFromNTilts(long, long, int &, int &);
-
+	float Tiltsize(float dTilt, float *T1X, float *T1Y, float *T2X, float *T2Y, int binning, DigitalMicrograph::Image *img1, DigitalMicrograph::Image *imgCC, DigitalMicrograph::Image *img0, float expo, float sleeptime, long _b);
+	float Shiftsize(float dShift, float *Sh1X, float *Sh1Y, float *Sh2X, float *Sh2Y, int binning, DigitalMicrograph::Image *img1, DigitalMicrograph::Image *imgCC, DigitalMicrograph::Image *img0, float expo, float sleeptime, long _b);
 	// stuff in script main, may not need here
+
+	Acquisition CalibrateAcquisition;
+	
+
+	//Gatan::Camera::Camera camera;
+	//Gatan::uint32 xpixels;
+	//Gatan::uint ypixels;
+	//bool inserted;
+	//Gatan::Camera::AcquisitionProcessing processing;
+	//Gatan::Camera::AcquisitionParameters acqparams;
+	//Gatan::CM::AcquisitionPtr acq;
+	//DigitalMicrograph::ScriptObject acqtok;
+	//Gatan::CM::FrameSetInfoPtr fsi;
+	//Gatan::Camera::AcquisitionImageSourcePtr acqsource;
+
+	//bool acqprmchanged;
 
 };
