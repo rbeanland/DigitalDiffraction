@@ -52,8 +52,8 @@ BOOL CDMDialog::OnInitDialog()
 	 m_tbCtrl.InitDialogs();
 	
 	 // Tab Names
-	 m_tbCtrl.InsertItem(0,"Acquisition");
-	 m_tbCtrl.InsertItem(1,"Processing");
+	 m_tbCtrl.InsertItem(0,"DED");
+	 m_tbCtrl.InsertItem(1,"Settings");
 
 	 m_tbCtrl.ActivateTabDialogs();
 

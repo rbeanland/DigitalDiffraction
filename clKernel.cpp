@@ -112,3 +112,98 @@ cl_int clQueue::SetupQueue(cl_context &context, cl_device_id device)
 clQueue::clQueue(void)
 {
 }
+
+clVariables::clVariables()
+{
+	gotContext = false;
+	gotDevice = false;
+	gotQueue = false;
+};
+
+clVariables::~clVariables()
+{
+};
+
+cl_context clVariables::GetClContext()
+{
+	if (gotContext) {
+		return *context;
+	}
+	else {
+		DigitalMicrograph::Result("Trying to access clContext without setting it first \n");
+		exit(1);
+	}
+};
+
+cl_context* clVariables::GetClContextPtr()
+{
+	if (gotContext) {
+		return context;
+	}
+	else {
+		DigitalMicrograph::Result("Trying to access clContext without setting it first \n");
+		exit(1);
+	}
+};
+
+cl_command_queue clVariables::GetCLCmdQueue()
+{
+	if (gotQueue) {
+		return clq->cmdQueue;
+	}
+	else {
+		DigitalMicrograph::Result("Trying to access clQueue without setting it first \n");
+		exit(1);
+	}
+}
+
+cl_command_queue* clVariables::GetClCmdQueuePtr()
+{
+	if (gotQueue) {
+		return &(clq->cmdQueue);
+	}
+	else {
+		DigitalMicrograph::Result("Trying to access clQueue without setting it first \n");
+		exit(1);
+	}
+}
+
+clQueue* clVariables::GetClQueue()
+{
+	if (gotQueue) {
+		return clq;
+	}
+	else {
+		DigitalMicrograph::Result("Trying to access clQueue without setting it first \n");
+		exit(1);
+	}
+};
+
+clDevice* clVariables::GetClDevice()
+{
+	if (gotDevice) {
+		return cldev;
+	}
+	else {
+		DigitalMicrograph::Result("Trying to access clQueue without setting it first \n");
+		exit(1);
+	}
+};
+
+void clVariables::SetClDevice(clDevice* cldev)
+{
+	this->cldev = cldev;
+	gotDevice = true;
+}
+
+void clVariables::SetClContext(cl_context* context)
+{
+	this->context = context;
+	gotContext = true;
+}
+
+void clVariables::SetClQueue(clQueue* clq)
+{
+	this->clq = clq;
+	gotQueue = true;
+}

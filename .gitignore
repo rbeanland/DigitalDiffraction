@@ -12,3 +12,7 @@ x64/
 res/
 ipch/
 _UpgradeReport_Files/
+ROIposit.cpp
+ROIposit.h
+ROIpos.cpp
+ROIpos.h

@@ -15,10 +15,9 @@
 class Process
 {
 public:
-
 	double t,l,b,r;
-	bool roicontinue;
-
+	double tInc_factor;
+	DigitalMicrograph::TagGroup Persistent;
 	void ROIpos(DigitalMicrograph::Image,std::string, double&, double&, double&, double&);
 	void GetCoordsFromNTilts(long, long, int&, int&);
 	void AddBlueCircle(DigitalMicrograph::Image*,float,float,float,float);
@@ -26,6 +25,5 @@ public:
 	void UserG(DigitalMicrograph::Image,float,float&,float&,float&, float&,float&,float&);
 	void GetMeanG(DigitalMicrograph::Image*, DigitalMicrograph::Image&, float*, double&, double&, double&, double&, int&);
 	void GetG_Vectors(DigitalMicrograph::Image Avg, float Rr, float&, float&, float&, float&, long&, long&);
-	void DoProcess();
-
+	void DoProcess(CProgressCtrl&);
 };

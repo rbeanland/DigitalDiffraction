@@ -7,6 +7,9 @@
 #include "ExtraGatan.h"
 #include "DMPlugInCamera.h"
 
+#include "MyDlg1.h"
+#include "Acquisition.h"
+
 	  //***     Digital Electron Diffraction      ***\\
 	 //** Richard Beanland r.beanland@warwick.ac.uk **\\
 	//**    Joel C Forster j.c.forster@warwick.ac.uk **\\
@@ -16,11 +19,12 @@
 class Collect
 {
 public:
-	long Camb, Camr;
-	double CamL;
-	float mag, alpha;
-	int binning;
+	long Camb, Camr;// Camera pixel height and width
+	double CamL; // Camera length
+	float mag, alpha; // Microscope variables
+	int binning;//controlled by drop down
 	double expo, _t, _l, _b, _r, sleeptime;
+	double tInc_factor; // controlled by text edit
 	DigitalMicrograph::Image img1, TiltCal, Xsh, Ysh, CBED;
 	Gatan::PlugIn::ImageDataLocker XshLock, YshLock, TiltLock, CBEDLock, img1Lock;
 	float* XshPix;
@@ -35,19 +39,20 @@ public:
 	float nTilts, tInc;
 	std::string prompt;
 	long nPts;
-	long TiltX0, TiltY0, ShiftX0, ShiftY0, imgX, imgY;
+	long TiltX0, TiltY0, ShiftX0, ShiftY0, imgX, imgY; // tilt and shift DAC coordinates and image size in pixels
 	bool quit, success;
 	float pX, pY, tX, tY, sX, sY;
 	long nX, nY, nnX, nnY;
 	void GetCoordsFromNTilts(long, long, int &, int &);
 	DigitalMicrograph::TagGroup CBEDGroup;
-	DigitalMicrograph::Image Dark, Gain;
+	DigitalMicrograph::Image Dark, Gain; // Reference images
 
 	float Rr,spot,xTpX,xTpY,yTpX,yTpY,xShpX,xShpY,yShpX,yShpY;
 	long nCals;
+
 	bool LoadTiltCalibTagInfo(DigitalMicrograph::Image*);
 	bool LoadTiltCalibImages(DigitalMicrograph::Image*, DigitalMicrograph::Image*, DigitalMicrograph::Image*);
-	void DoCollection();
+	void DoCollection(CProgressCtrl&);
 
-	void TestDia();
+	Acquisition CollectAcquisition;
 };

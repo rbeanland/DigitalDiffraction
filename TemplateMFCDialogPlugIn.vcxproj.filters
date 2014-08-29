@@ -69,6 +69,9 @@
     <ClCompile Include="DED_Process.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Acquisition.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyTabCtrl.h">
@@ -129,6 +132,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DED_Process.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Acquisition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

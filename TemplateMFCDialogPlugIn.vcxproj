@@ -234,7 +234,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Calling PostBuildEvent if it exists...</Message>
-      <Command>if exist $(ProjectDir)\$(ProjectName)_PostBuildEvent.bat $(ProjectDir)\$(ProjectName)_PostBuildEvent.bat $(ProjectName) $(Platform) $(Configuration) $(TargetPath)</Command>
+      <Command>xcopy /y "$(OutDir)$(TargetFileName)" "C:\ProgramData\Gatan\Plugins\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseNoOpt|Win32'">
@@ -375,6 +375,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Acquisition.cpp" />
     <ClCompile Include="amsEdit.cpp" />
     <ClCompile Include="clFourier.cpp" />
     <ClCompile Include="clKernel.cpp" />
@@ -409,6 +410,7 @@
     <ClInclude Include="DED_TiltCalibration.h" />
     <ClInclude Include="ExtraGatan.h" />
     <ClInclude Include="DED_Process.h" />
+    <ClInclude Include="Acquisition.h" />
     <ClInclude Include="MyTabCtrl.h" />
     <ClInclude Include="amsEdit.h" />
     <ClInclude Include="DMDialog.h" />

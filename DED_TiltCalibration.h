@@ -6,9 +6,7 @@
 #include "utility.h"
 #include "ExtraGatan.h"
 #include "DMPlugInCamera.h"
-
 #include "Acquisition.h"
-
 
 	  //***     Digital Electron Diffraction      ***\\
 	 //** Richard Beanland r.beanland@warwick.ac.uk **\\
@@ -19,7 +17,7 @@
 class Calibrate
 {
 public:
-	long Camb, Camr;
+	long Camb, Camr;//camera bottom and right (t,l,b,r)
 	int binning; // controlled by user input dropdown box
 	double	expo, //controlled by text edit box
 			_t,  
@@ -28,54 +26,28 @@ public:
 			_r, //camera pixel coordinates
 			sleeptime; //delay while waiting for microscope to respond, controlled by text box
 	DigitalMicrograph::Image img1, img0, imgCC; // live image, reference image & cross-correlation
-	DigitalMicrograph::ScriptObject img_src;
 
-	bool quit, success;
-
-	float Rr; //ln333 script
-	float T1X, T1Y, T2X, T2Y, dTilt, dShift, detT, xTpX, xTpY, yTpX, yTpY;
-	float Sh1X, Sh1Y, Sh2X, Sh2Y, detSh, xShpX, xShpY, yShpX, yShpY;
-	long ShiftX0, ShiftY0, TiltX0, TiltY0;
+	float Rr;//CBED disc radius
+	float T1X, T1Y, T2X, T2Y, dTilt, dShift, detT, xTpX, xTpY, yTpX, yTpY;// Tilt variables
+	float Sh1X, Sh1Y, Sh2X, Sh2Y, detSh, xShpX, xShpY, yShpX, yShpY; // Shift variables
+	long ShiftX0, ShiftY0, TiltX0, TiltY0; // DAC shift and tilt coordinates
 	long nTilts, tX, tY, x, y, dx, dy;
 	float tIncX, tIncY, maxval;
 
-
 	DigitalMicrograph::Image Xsh, Ysh, TiltCal;
-
 	DigitalMicrograph::TagGroup Persistent;
-
-	// variables used in subroutines, may not be needed to be declared here
 	bool acq_paramas_changed;
 	float max_wait;
 
 	long t,l,b,r;
-	DigitalMicrograph::Image medImg,
-						IMG; //may not need this image here, may be created/declared in function inputs
-	float thr; // don't think it's needed, used as a function parameter in ExtraGatan.
+	DigitalMicrograph::Image medImg, IMG; 
+	float thr;
+	std::string mode_want, mode_is;
 
-	//EMChangeMode
-	std::string mode_want, mode_is; // may not need both of these, or either, function in ExtraGatan
-
-	void DoCalibration(CProgressCtrl&); // aka main for calibration
+	void DoCalibration(CProgressCtrl&);
 	void GetCoordsFromNTilts(long, long, int &, int &);
 	float Tiltsize(float dTilt, float *T1X, float *T1Y, float *T2X, float *T2Y, int binning, DigitalMicrograph::Image *img1, DigitalMicrograph::Image *imgCC, DigitalMicrograph::Image *img0, float expo, float sleeptime, long _b);
 	float Shiftsize(float dShift, float *Sh1X, float *Sh1Y, float *Sh2X, float *Sh2Y, int binning, DigitalMicrograph::Image *img1, DigitalMicrograph::Image *imgCC, DigitalMicrograph::Image *img0, float expo, float sleeptime, long _b);
-	// stuff in script main, may not need here
 
 	Acquisition CalibrateAcquisition;
-	
-
-	//Gatan::Camera::Camera camera;
-	//Gatan::uint32 xpixels;
-	//Gatan::uint ypixels;
-	//bool inserted;
-	//Gatan::Camera::AcquisitionProcessing processing;
-	//Gatan::Camera::AcquisitionParameters acqparams;
-	//Gatan::CM::AcquisitionPtr acq;
-	//DigitalMicrograph::ScriptObject acqtok;
-	//Gatan::CM::FrameSetInfoPtr fsi;
-	//Gatan::Camera::AcquisitionImageSourcePtr acqsource;
-
-	//bool acqprmchanged;
-
 };

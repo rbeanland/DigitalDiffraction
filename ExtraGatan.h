@@ -15,27 +15,24 @@
 //**	  Joel Forster (C++ conversion)	  j.c.forster@warwick.ac.uk   **\\
 //**	  James Gott (C++ conversion continued) j.a.gott@warwick.ac.uk**\\
 
-class ROICheck;
 
 class ExtraGatan
 {
-	
 public:
-	
 	ExtraGatan();
 	static void UpdateCamera(DigitalMicrograph::Image *img_disp, double expo, int binning);
 	static DigitalMicrograph::Image tert(DigitalMicrograph::Image INPUT, float thr); //replaces the tert() function from DM
 	static DigitalMicrograph::Image Normalise(DigitalMicrograph::Image IMG1, float max); //divides every pixel in an image by the specificed max value
 	static float Max(DigitalMicrograph::Image IMG1); //finds the brightest pixel in an image
-	static float Min(DigitalMicrograph::Image IMG1); //finds the dimmest pixel in an image
-	static long Sum(float*,int); //finds the sum of pixel values in a 1D image
+	static float Min(DigitalMicrograph::Image IMG1); //finds the dimmest pixel in an image JG
+	static long Sum(float*,int); //finds the sum of pixel values in a 1D image JG
 	static float Max(DigitalMicrograph::Image IMG1, long* x, long* y); //finds the brightest pixel in an image
 	static void PixelPos(DigitalMicrograph::Image IMG1, float min, long* imgX, long* imgY, bool avg); //finds the x and y of a given pixel value, if avg is switched on, it gets the average location between equivalent values
 	static std::string EMGetImagingOpticsMode(); //gets the current microscope mode
 	static DigitalMicrograph::ScriptObject GetFrameSetInfo (DigitalMicrograph::ScriptObject &Acquis); //used in image aquisition
 	static DigitalMicrograph::ScriptObject GetFrameSetInfoPtr (DigitalMicrograph::ScriptObject &Acquis);
 	static bool EMChangeMode(std::string mode_want); //asks the user to change to the mode required by a function, returns if the user clicked cancel
-	static void EMBeamCentre(std::string Tag_Path, DigitalMicrograph::Image IMG1); //centres the beam on a specified point
+	static void EMBeamCentre(std::string Tag_Path, DigitalMicrograph::Image IMG1); //centres the beam on a specified point JG
 	static void EMGetBeamShift(long* shiftx, long* shifty); //gets the amount the beam has been shifted from it's original position
 	static void EMGetBeamTilt(long* tiltx, long* tilty); //gets the amount the beam has been tilted
 	static void GetDateAndTime(std::string* dateout, std::string* timeout);
@@ -107,13 +104,12 @@ public:
 	static DigitalMicrograph::Image CrossCorr2(DigitalMicrograph::Image Cc, DigitalMicrograph::Image img1, DigitalMicrograph::Image img2);
 	static void SafeSave(std::string path, DigitalMicrograph::Image input);
 
-	static float maxoftwo(float, float);
-	static float minoftwo(float, float);
-	static void setCompCol(DigitalMicrograph::Component annot, float r, float g, float b);
-	static void ExtraGatan::InvCircularMask2D(DigitalMicrograph::Image *input, long pix_X, long pix_Y, float radius);
-	static double ExtraGatan::altInterpolate(DigitalMicrograph::Image* input, long xCal, long yCal, long pX, long nX, long pY, long nY, long nnX, long nnY);
-	static void  ExtraGatan::sAcquire(DigitalMicrograph::Image* Acquired, int bin, bool* quit, bool* success, double expo);
-	static float ExtraGatan::Min3D(DigitalMicrograph::Image IMG1);
-	static float ExtraGatan::Max3D(DigitalMicrograph::Image IMG1);
-
+	static float maxoftwo(float, float);// returns the max from two inputs JG
+	static float minoftwo(float, float);//returns the min of two inpits JG
+	static void setCompCol(DigitalMicrograph::Component annot, float r, float g, float b);//change the colour of a component, requires the installation of setaCol() script
+	static void ExtraGatan::InvCircularMask2D(DigitalMicrograph::Image *input, long pix_X, long pix_Y, float radius);//JG
+	static double ExtraGatan::altInterpolate(DigitalMicrograph::Image* input, long xCal, long yCal, long pX, long nX, long pY, long nY, long nnX, long nnY);//JG
+	static void  ExtraGatan::sAcquire(DigitalMicrograph::Image* Acquired, int bin, bool* quit, bool* success, double expo);//No longer useful, replaced by acquisition class
+	static float ExtraGatan::Min3D(DigitalMicrograph::Image IMG1);//Returns the max pixel value form a 3D image JG
+	static float ExtraGatan::Max3D(DigitalMicrograph::Image IMG1);// Returns the min pixel value from a 3D image JG
 };

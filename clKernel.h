@@ -97,3 +97,29 @@ public:
 
 };
 
+class clVariables
+{
+private:
+	bool gotContext;
+	bool gotQueue;
+	bool gotDevice;
+
+	cl_context* context;
+	clQueue* clq;
+	clDevice* cldev;
+
+public:
+	clVariables();
+	~clVariables();
+
+	cl_int status; //////////////////////////all these are being defined by user
+	cl_context			GetClContext();
+	cl_context*			GetClContextPtr();
+	cl_command_queue	GetCLCmdQueue();
+	cl_command_queue*	GetClCmdQueuePtr();
+	clQueue*			GetClQueue();
+	clDevice*			GetClDevice();
+	void				SetClContext(cl_context* context);
+	void				SetClQueue(clQueue* clq);
+	void				SetClDevice(clDevice* cldev);
+};
