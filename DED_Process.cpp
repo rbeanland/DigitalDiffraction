@@ -1143,6 +1143,9 @@ void Process::DoProcess(CProgressCtrl &progress_ctrl)
 	Gatan::PlugIn::ImageDataLocker montagelock(Montage);
 	float* montagepix = (float*)montagelock.get();
 
+	//copy image calibration information to CBED stack
+	DigitalMicrograph::ImageCopyCalibrationFrom(Montage,CBED_stack);
+
 	DigitalMicrograph::ImageDocument montagedisp;
 	montagedisp = DigitalMicrograph::ImageGetOrCreateImageDocument(Montage);
 	montagedisp.ShowAtPosition(440, 30);

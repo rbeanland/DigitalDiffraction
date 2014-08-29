@@ -197,6 +197,7 @@ void MyDlg1::DoWork()//worker thread function
 	{
 		DigitalMicrograph::OkDialog("Expo, Sleeptime, Binning or tInc of incorrect type!\nTry again");
 		_continue=false;
+		OnBnClickedButton9();//reset buttons
 		return;
 	}
 
@@ -223,11 +224,13 @@ void MyDlg1::DoWork()//worker thread function
 			if (!(binning_input == 1 || binning_input == 2 || binning_input == 3 || binning_input == 4))
 			{
 				DigitalMicrograph::OkDialog("Binning must take value 1,2,3 or 4 only\nPlease try again");
+				OnBnClickedButton9();//reset buttons
 				return;
 			}
 			else
 			{
 				DigitalMicrograph::OkDialog("tInc factor must take a value between 0.25 and 1\nPlease try again (the default is 0.8)");
+				OnBnClickedButton9();//reset buttons
 				return;
 			}
 		}

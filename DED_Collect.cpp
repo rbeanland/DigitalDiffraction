@@ -270,6 +270,11 @@ void Collect::DoCollection(CProgressCtrl& progress_ctrl)
 			img1Lock.lock(img1);
 			img1Pix = (float*) img1Lock.get();
 
+			if (pt == 1)//copy image calibration information to CBED stack
+			{
+				DigitalMicrograph::ImageCopyCalibrationFrom(CBED, img1);
+			}
+
 			std::copy(img1Pix, img1Pix + (imgX*imgY), CBEDPix + (pt*imgX*imgY));
 			DigitalMicrograph::ImageDataChanged(CBED);
 			pt++;
