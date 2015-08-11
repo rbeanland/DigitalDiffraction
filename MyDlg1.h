@@ -2,11 +2,7 @@
 #include "resource.h"
 #include "numedit.h"
 #include "c:\program files (x86)\microsoft visual studio 9.0\vc\atlmfc\include\afxwin.h"
-#include "CL/OpenCl.h"
-#include "clAmdFft.h"
 #include <complex>
-#include "clKernel.h"
-#include "clFourier.h"
 #include "WorkerClass.h"
 #include "DED_TiltCalibration.h"
 #include "DED_Collect.h"
@@ -36,16 +32,7 @@ protected:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 
 public:
-	// CL Stuff
-	bool OpenCLAvailable;
-	cl_command_queue cmdQueue;
-	cl_context context;
-	// Use this to check status after every API call
-	cl_int status;
-	cl_uint numDevices;
-	cl_device_id* devices;
-	clDevice* cldev;
-	clQueue* clq;
+	
 	double expo_input, sleeptime_input, tInc_input;
 	int binning_input;
 	Calibrate* DEDCalibrate;

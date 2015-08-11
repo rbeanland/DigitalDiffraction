@@ -1,7 +1,5 @@
 #pragma once
 #include "boost/lexical_cast.hpp"
-#include "CL/OpenCl.h"
-#include "clKernel.h"
 #include "stdafx.h"
 
 
@@ -39,7 +37,7 @@ public:
 		DigitalMicrograph::Result(res.c_str());
 	}
 
-	static void PrintCLMemToImage(cl_mem buffer,std::string name, int width, int height, clTypes type, clQueue* clq);
+
 
 };
 

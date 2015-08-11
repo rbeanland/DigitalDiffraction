@@ -4,8 +4,6 @@
 #include "afxwin.h"
 #include "standardfunctions.h"
 #include "numedit.h"
-#include "CL/OpenCl.h"
-#include "clAmdFft.h"
 #include <complex>
 #include "WorkerClass.h"
 #include "DED_Process.h"

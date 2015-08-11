@@ -42,12 +42,6 @@
     <ClCompile Include="standardfunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="clKernel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="clFourier.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -102,15 +96,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TemplateMFCDialogPlugIn.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CLKernels.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="clKernel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="clFourier.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Utility.h">

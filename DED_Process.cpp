@@ -1118,14 +1118,16 @@ void Process::DoProcess(CProgressCtrl &progress_ctrl)
 		DigitalMicrograph::Result("F = " + boost::lexical_cast<std::string>(F1)+" \n");
 	}
 	//FimgX is the size of the montage, uses the largest dimension
-	//depending on number of reflections and magnitude
+	//depending on number of reflections and magnitude // here be potential bug...
 	if (ExtraGatan::maxoftwo(abs(g1X), abs(g1Y)) > ExtraGatan::maxoftwo(abs(g2X), abs(g2Y)))
 	{
 		FimgX = ExtraGatan::maxoftwo((4 * nV1*ExtraGatan::maxoftwo(abs(g1X), abs(g1Y))*F1), (4 * nV2 * 2 * wid));
+		DigitalMicrograph::Result("Image Size " + boost::lexical_cast<std::string>(FimgX) + " \n");
 	}
 	else
 	{
 		FimgX = ExtraGatan::maxoftwo((4 * nV2*ExtraGatan::maxoftwo(abs(g1X), abs(g1Y))*F1), (4 * nV1 * 2 * wid));
+		DigitalMicrograph::Result("Image Size " + boost::lexical_cast<std::string>(FimgX) + " \n");
 	}
 
 	if (print_f_fimgx == true)
