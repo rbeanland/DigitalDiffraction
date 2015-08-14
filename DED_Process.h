@@ -24,6 +24,7 @@ public:
 	void AddYellowArrow(DigitalMicrograph::Image*, float, float, float, float);
 	void UserG(DigitalMicrograph::Image,float,float&,float&,float&, float&,float&,float&);
 	void GetMeanG(DigitalMicrograph::Image*, DigitalMicrograph::Image&, float*, double&, double&, double&, double&, int&);
+	void FindCentralDisc(DigitalMicrograph::Image Avg, float Rr, long&, long&);
 	void GetG_Vectors(DigitalMicrograph::Image Avg, float Rr, float&, float&, float&, float&, long&, long&);
 	void DoProcess(CProgressCtrl&);
 };

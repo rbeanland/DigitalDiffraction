@@ -260,6 +260,32 @@ void Process::GetMeanG(DigitalMicrograph::Image *MagTheta,DigitalMicrograph::Ima
 	}//end of for(i)	
 }//End of GetMeanG
 
+//Finds the position of the central disc in an Average CBED image
+void Process::FindCentralDisc(DigitalMicrograph::Image Avg, float Rr, long &LCentralDiscPositonX, long &LCentralDiscPositionY)
+{
+	//Get size of 
+	long LLengthOfAverageImageX, LLengthOfAverageImageY;
+	DigitalMicrograph::Get2DSize(Avg, &LLengthOfAverageImageX, &LLengthOfAverageImageY);
+
+	//start by getting a cross-correlation image
+	//image of a blank disc radius Rr
+	DigitalMicrograph::Image IDisc = ExtraGatan::MakeDisc(LLengthOfAverageImageX, LLengthOfAverageImageY, Rr);
+	DigitalMicrograph::Image IAverageCBEDCC = DigitalMicrograph::CrossCorrelate(Avg, IDisc);
+	Gatan::PlugIn::ImageDataLocker avcclock(IAverageCBEDCC);
+	float* avccpix = (float*)avcclock.get();
+
+	//Find Position of Central Disc by Cross Correlating A Disc of radius R (CBED disc radius)
+	//with the Average CBED image. The maximum intensity will give the position of the central disc
+	long avccX, avccY;
+	DigitalMicrograph::Get2DSize(IAverageCBEDCC, &avccX, &avccY);
+	double DMaxValue;
+	long LXPosition, LYPosition;
+	DMaxValue = ExtraGatan::Max(IAverageCBEDCC);
+	ExtraGatan::PixelPos(IAverageCBEDCC, DMaxValue, &LXPosition, &LYPosition, false);
+	LCentralDiscPositonX = LXPosition;
+	LCentralDiscPositionY = LYPosition;
+}//End of FindCentralDisc
+
 void Process::GetG_Vectors(DigitalMicrograph::Image Avg, float Rr, float &g1X, float &g1Y, float &g2X, float &g2Y, long &pX, long &pY)
 {
 	long nPeaks = 25;//maximum number of peaks to measure in the cross correlation
@@ -853,7 +879,7 @@ void Process::DoProcess(CProgressCtrl &progress_ctrl)
 		DigitalMicrograph::Result("Fatal Bug in Automatic G-Vector finder, please find by hand \n");
 
 		
-		DigitalMicrograph::Result("calling getgvectors...\n");
+		//DigitalMicrograph::Result("calling getgvectors...\n");
 
 		DigitalMicrograph::Image Disc = ExtraGatan::MakeDisc(imgX, imgY, Rr);
 		DigitalMicrograph::Image AvCC = DigitalMicrograph::CrossCorrelate(Avg, Disc);
@@ -901,6 +927,10 @@ void Process::DoProcess(CProgressCtrl &progress_ctrl)
 				}
 			}
 
+			DigitalMicrograph::Result("calling FindCentralDisc...\n");
+
+			FindCentralDisc(Avg, Rr, pX, pY);
+
 		
 			//////////////////////////////
 			//check g-vectors are acceptable, if not do them manually
@@ -908,8 +938,8 @@ void Process::DoProcess(CProgressCtrl &progress_ctrl)
 			std::string prompt;
 			DigitalMicrograph::Image AvgTemp;
 			float ppx, ppy;
-			//ppx = (float)pX;
-			//ppy = (float)pY;
+			ppx = (float)pX;
+			ppy = (float)pY;
 			double pi = 3.1415926535897932384626433832795;
 			int nocount = 0; // counts how many times measured g-vectors are 'not good'
 		
