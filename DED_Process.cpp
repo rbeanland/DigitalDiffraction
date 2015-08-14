@@ -260,6 +260,32 @@ void Process::GetMeanG(DigitalMicrograph::Image *MagTheta,DigitalMicrograph::Ima
 	}//end of for(i)	
 }//End of GetMeanG
 
+//Finds the position of the central disc in an Average CBED image
+void Process::FindCentralDisc(DigitalMicrograph::Image Avg, float Rr, long &LCentralDiscPositonX, long &LCentralDiscPositionY)
+{
+	//Get size of 
+	long LLengthOfAverageImageX, LLengthOfAverageImageY;
+	DigitalMicrograph::Get2DSize(Avg, &LLengthOfAverageImageX, &LLengthOfAverageImageY);
+
+	//start by getting a cross-correlation image
+	//image of a blank disc radius Rr
+	DigitalMicrograph::Image IDisc = ExtraGatan::MakeDisc(LLengthOfAverageImageX, LLengthOfAverageImageY, Rr);
+	DigitalMicrograph::Image IAverageCBEDCC = DigitalMicrograph::CrossCorrelate(Avg, IDisc);
+	Gatan::PlugIn::ImageDataLocker avcclock(IAverageCBEDCC);
+	float* avccpix = (float*)avcclock.get();
+
+	//Find Position of Central Disc by Cross Correlating A Disc of radius R (CBED disc radius)
+	//with the Average CBED image. The maximum intensity will give the position of the central disc
+	long avccX, avccY;
+	DigitalMicrograph::Get2DSize(IAverageCBEDCC, &avccX, &avccY);
+	double DMaxValue;
+	long LXPosition, LYPosition;
+	DMaxValue = ExtraGatan::Max(IAverageCBEDCC);
+	ExtraGatan::PixelPos(IAverageCBEDCC, DMaxValue, &LXPosition, &LYPosition, false);
+	LCentralDiscPositonX = LXPosition;
+	LCentralDiscPositionY = LYPosition;
+}//End of FindCentralDisc
+
 void Process::GetG_Vectors(DigitalMicrograph::Image Avg, float Rr, float &g1X, float &g1Y, float &g2X, float &g2Y, long &pX, long &pY)
 {
 	long nPeaks = 25;//maximum number of peaks to measure in the cross correlation
@@ -849,59 +875,74 @@ void Process::DoProcess(CProgressCtrl &progress_ctrl)
 	//Find g-vectors
 	float g1X, g1Y, g1mag, g2X, g2Y, g2mag, ratio, angle;
 	long pX, pY;
-	DigitalMicrograph::Result("calling getgvectors...\n");
+	bool GVectorUserSwitch = true;
+		DigitalMicrograph::Result("Fatal Bug in Automatic G-Vector finder, please find by hand \n");
 
-	DigitalMicrograph::Image Disc = ExtraGatan::MakeDisc(imgX, imgY, Rr);
-	DigitalMicrograph::Image AvCC = DigitalMicrograph::CrossCorrelate(Avg, Disc);
-
-	bool display_avg_cc = false;
-	try
-	{
-		DigitalMicrograph::TagGroupGetTagAsBoolean(Persistent, (Tag_path + "Display Avg Cross Correlation").c_str(), &display_avg_cc);
-	}
-	catch (...)	{	}
-	if (display_avg_cc == true)
-	{
-		DigitalMicrograph::ImageDocumentShowAtPosition(DigitalMicrograph::ImageGetOrCreateImageDocument(AvCC), 15, 30);
-	}
-	GetG_Vectors(Avg, Rr, g1X, g1Y, g2X, g2Y, pX, pY);
-	//Check for failure to get g-vectors
-	if ((g1X*g1X) > ((imgX*imgX) / 4))
-	{
-		g1X = 0;
-	}
-	if ((g1Y*g1Y) > ((imgX*imgX) / 4))//should this be imgY??
-	{
-		g1Y = 0;
-	}
 		
-	g1mag = sqrt((g1X*g1X) + (g1Y*g1Y));
-	g2mag = sqrt((g2X*g2X) + (g2Y*g2Y));
-	double pi = 3.1415926535897932384626433832795;
+		//DigitalMicrograph::Result("calling getgvectors...\n");
 
-	if ((g1X + g1Y + g2X + g2Y) == 0)
-	{
-		DigitalMicrograph::Result("Cannot find g-vectors!");
-		return;
-	}
-	else
-	{//output g-vector statistics
-		DigitalMicrograph::Result("g-vector 1: " + boost::lexical_cast<std::string>(g1X)+", " + boost::lexical_cast<std::string>(g1Y)+", magnitude" + boost::lexical_cast<std::string>(g1mag)+"\n");
-		DigitalMicrograph::Result("g-vector 2: " + boost::lexical_cast<std::string>(g2X)+", " + boost::lexical_cast<std::string>(g2Y)+", magnitude" + boost::lexical_cast<std::string>(g2mag)+"\n");
-		ratio = g1mag / g2mag;
-		angle = 180 * acos(((g1X*g2X) + (g1Y*g2Y)) / (g1mag*g2mag)) / pi;
-		DigitalMicrograph::Result("ratio= " + boost::lexical_cast<std::string>(ratio)+", angle= " + boost::lexical_cast<std::string>(angle)+"\n");
-	}
-	//////////////////////////////
-	//check g-vectors are acceptable, if not do them manually
-	//long t, l, b, r;
-	std::string prompt;
-	DigitalMicrograph::Image AvgTemp;
-	float ppx, ppy;
-	ppx = (float)pX;
-	ppy = (float)pY;
-	int nocount=0; // counts how many times measured g-vectors are 'not good'
+		DigitalMicrograph::Image Disc = ExtraGatan::MakeDisc(imgX, imgY, Rr);
+		DigitalMicrograph::Image AvCC = DigitalMicrograph::CrossCorrelate(Avg, Disc);
+		
+			bool display_avg_cc = false;
+			try
+			{
+				DigitalMicrograph::TagGroupGetTagAsBoolean(Persistent, (Tag_path + "Display Avg Cross Correlation").c_str(), &display_avg_cc);
+			}
+			catch (...) {}
+			if (display_avg_cc == true)
+			{
+				DigitalMicrograph::ImageDocumentShowAtPosition(DigitalMicrograph::ImageGetOrCreateImageDocument(AvCC), 15, 30);
+			}
 
+			if (GVectorUserSwitch == false)
+			{
+				GetG_Vectors(Avg, Rr, g1X, g1Y, g2X, g2Y, pX, pY);
+				//Check for failure to get g-vectors
+				if ((g1X*g1X) > ((imgX*imgX) / 4))
+				{
+					g1X = 0;
+				}
+				if ((g1Y*g1Y) > ((imgX*imgX) / 4))//should this be imgY??
+				{
+					g1Y = 0;
+				}
+
+				g1mag = sqrt((g1X*g1X) + (g1Y*g1Y));
+				g2mag = sqrt((g2X*g2X) + (g2Y*g2Y));
+				double pi = 3.1415926535897932384626433832795;
+
+				if ((g1X + g1Y + g2X + g2Y) == 0)
+				{
+					DigitalMicrograph::Result("Cannot find g-vectors!");
+					return;
+				}
+				else
+				{//output g-vector statistics
+					DigitalMicrograph::Result("g-vector 1: " + boost::lexical_cast<std::string>(g1X) + ", " + boost::lexical_cast<std::string>(g1Y) + ", magnitude" + boost::lexical_cast<std::string>(g1mag) + "\n");
+					DigitalMicrograph::Result("g-vector 2: " + boost::lexical_cast<std::string>(g2X) + ", " + boost::lexical_cast<std::string>(g2Y) + ", magnitude" + boost::lexical_cast<std::string>(g2mag) + "\n");
+					ratio = g1mag / g2mag;
+					angle = 180 * acos(((g1X*g2X) + (g1Y*g2Y)) / (g1mag*g2mag)) / pi;
+					DigitalMicrograph::Result("ratio= " + boost::lexical_cast<std::string>(ratio) + ", angle= " + boost::lexical_cast<std::string>(angle) + "\n");
+				}
+			}
+
+			DigitalMicrograph::Result("calling FindCentralDisc...\n");
+
+			FindCentralDisc(Avg, Rr, pX, pY);
+
+		
+			//////////////////////////////
+			//check g-vectors are acceptable, if not do them manually
+			//long t, l, b, r;
+			std::string prompt;
+			DigitalMicrograph::Image AvgTemp;
+			float ppx, ppy;
+			ppx = (float)pX;
+			ppy = (float)pY;
+			double pi = 3.1415926535897932384626433832795;
+			int nocount = 0; // counts how many times measured g-vectors are 'not good'
+		
 	while (!DigitalMicrograph::TwoButtonDialog("Are the measured g-vectors good?", "Yes", "No"))
 	{
 		if (nocount > 3)
@@ -921,6 +962,9 @@ void Process::DoProcess(CProgressCtrl &progress_ctrl)
 		ratio = g1mag / g2mag;
 		angle = 180 * acos(((g1X*g2X) + (g1Y*g2Y)) / (g1mag*g2mag)) / pi;
 		DigitalMicrograph::Result("ratio= " + boost::lexical_cast<std::string>(ratio)+", angle= " + boost::lexical_cast<std::string>(angle)+"\n");
+		pX = ppx;
+		pY = ppy;
+
 	}
 	/////////////////////////////////
 	//Create 3D stack for D-LACBED images
@@ -1005,7 +1049,7 @@ void Process::DoProcess(CProgressCtrl &progress_ctrl)
 			{
 				GetCoordsFromNTilts(nTilts, pt, _i, _j);
 				//appropriate vector for disk
-				X = ExtraGatan::round(pX + ((float)_i)*tInc + (float)(m1*g1X) + (float)(m2*g2X));//pX is the centre beam position
+				X = ExtraGatan::round(pX + ((float)_i)*tInc + (float)(m1*g1X) + (float)(m2*g2X));//pX is the centre beam position - no it isn't...
 				Y = ExtraGatan::round(pY + ((float)_j)*tInc + (float)(m1*g1Y) + (float)(m2*g2Y));
 
 				if (print_x_y == true)
@@ -1118,14 +1162,16 @@ void Process::DoProcess(CProgressCtrl &progress_ctrl)
 		DigitalMicrograph::Result("F = " + boost::lexical_cast<std::string>(F1)+" \n");
 	}
 	//FimgX is the size of the montage, uses the largest dimension
-	//depending on number of reflections and magnitude
+	//depending on number of reflections and magnitude // here be potential bug...
 	if (ExtraGatan::maxoftwo(abs(g1X), abs(g1Y)) > ExtraGatan::maxoftwo(abs(g2X), abs(g2Y)))
 	{
 		FimgX = ExtraGatan::maxoftwo((4 * nV1*ExtraGatan::maxoftwo(abs(g1X), abs(g1Y))*F1), (4 * nV2 * 2 * wid));
+		DigitalMicrograph::Result("Image Size " + boost::lexical_cast<std::string>(FimgX) + " \n");
 	}
 	else
 	{
 		FimgX = ExtraGatan::maxoftwo((4 * nV2*ExtraGatan::maxoftwo(abs(g1X), abs(g1Y))*F1), (4 * nV1 * 2 * wid));
+		DigitalMicrograph::Result("Image Size " + boost::lexical_cast<std::string>(FimgX) + " \n");
 	}
 
 	if (print_f_fimgx == true)

@@ -8,8 +8,8 @@
 #include <sstream>
 #include "DMPluginCamera.h"
 #include "standardfunctions.h"
-#include "CLKernels.h"
-#include "clFourier.h"
+//#include "CLKernels.h"
+//#include "clFourier.h"
 #include "utility.h"
 #include "OptionsDialog.h"
 #include <iostream>
@@ -73,64 +73,7 @@ MyDlg1::MyDlg1(CWnd* pParent /*=NULL*/)
 		return;
 	}
 
-	//Setup OpenCL
-	OpenCLAvailable = false;
-	context = NULL;
-	numDevices = 0;
-	devices = NULL;
-
-	// Maybe Can Do OpenCL setup and device registering here - Print to Ouput with device data?
-	// Discover and initialize available platforms
-	cl_uint numPlatforms = 0;
-	cl_platform_id * platforms = NULL;
-
-	// Use clGetPlatformIds() to retrieve the number of platforms
-	status = clGetPlatformIDs(0,NULL,&numPlatforms);
-
-	// Allocate enough space for each platform
-	platforms = (cl_platform_id*)malloc(numPlatforms*sizeof(cl_platform_id));
-
-	// Fill in platforms with clGetPlatformIDs()
-	status = clGetPlatformIDs(numPlatforms,platforms,NULL);
-
-	// Discover and initialize available devices	
-	// use clGetDeviceIDs() to retrieve number of devices present
-	status = clGetDeviceIDs(platforms[platformnumber],CL_DEVICE_TYPE_ALL,0,NULL,&numDevices);
-
-	// Allocate enough space for each device
-	devices = (cl_device_id*)malloc(numDevices*sizeof(cl_device_id));
-
-	// Fill in devices with clGetDeviceIDs()
-	status = clGetDeviceIDs(platforms[platformnumber],CL_DEVICE_TYPE_ALL,numDevices,devices,NULL);
-
-	// Most of initialisation is done, would be nice to print device information...
-	//Getting the device name
-	size_t deviceNameLength = 4096;
-	size_t actualSize;
-	char* tempDeviceName = (char*)malloc(4096);
-	char* deviceName;
-	status |= clGetDeviceInfo(devices[devicenumber], CL_DEVICE_NAME, deviceNameLength, tempDeviceName, &actualSize);
-
-	if(status == CL_SUCCESS)
-	{
-		deviceName = (char*)malloc(actualSize);
-		memcpy(deviceName, tempDeviceName, actualSize);
-		free(tempDeviceName);
-
-		std::string devName(deviceName);
-		Gatan::DM::Result("Using OpenCL on device "+devName+" - OCL - EWR\n");
-		Gatan::DM::Result("To change edit the Global Tags OpenCL:Platform and OpenCL:Device then restart DM\n");
-		OpenCLAvailable = true;
-
-		context = clCreateContext(NULL,numDevices,devices,NULL,NULL,&status);
-		clq = new clQueue();
-		clq->SetupQueue(context,devices[devicenumber]);
-		cldev = new clDevice(numDevices,devices);
-	}
-	if(status!=CL_SUCCESS)
-	{
-		Gatan::DM::Result("Could not setup OpenCL on this computer, run clinfo to check availability\n");
-	}
+	
 }
 
 MyDlg1::~MyDlg1()

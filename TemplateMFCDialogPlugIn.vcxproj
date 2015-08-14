@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="ReleaseNoOpt|Win32">
       <Configuration>ReleaseNoOpt</Configuration>
@@ -31,25 +31,30 @@
     <ProjectGuid>{46693E51-01D6-4CED-9C29-EE6AF34989CE}</ProjectGuid>
     <RootNamespace>TemplateMFCDialogPlugIn</RootNamespace>
     <Keyword>MFCDLLProj</Keyword>
+    <TargetPlatformVersion>8.1</TargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseNoOpt|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseNoOpt|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -57,6 +62,9 @@
     <CharacterSet>MultiByte</CharacterSet>
     <CLRSupport>false</CLRSupport>
     <PlatformToolset>v90</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -93,8 +101,8 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ReleaseNoOpt|x64'">false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Program Files %28x86%29\AMD\clAmdFft\include;C:\C++\boost_1_55_0;C:\Program Files (x86)\AMD APP SDK\2.9\include;C:\ProgramData\Gatan\DMSDK\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\AMD\clAmdFft\lib64\import;C:\Program Files %28x86%29\AMD APP SDK\2.9\lib\x86_64;C:\ProgramData\Gatan\DMSDK\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Programming\Cpp\boost_1_58_0;C:\ProgramData\Gatan\DMSDK\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\ProgramData\Gatan\DMSDK\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <BuildLog>
@@ -212,7 +220,7 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>DMPlugInBasic.lib;Foundation.lib;OpenCL.lib;clAmdFft.Runtime.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DMPlugInBasic.lib;Foundation.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
@@ -377,8 +385,6 @@
   <ItemGroup>
     <ClCompile Include="Acquisition.cpp" />
     <ClCompile Include="amsEdit.cpp" />
-    <ClCompile Include="clFourier.cpp" />
-    <ClCompile Include="clKernel.cpp" />
     <ClCompile Include="DED_Collect.cpp" />
     <ClCompile Include="DED_Process.cpp" />
     <ClCompile Include="DED_TiltCalibration.cpp" />
@@ -403,9 +409,6 @@
     <ClCompile Include="WorkerClass.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="clFourier.h" />
-    <ClInclude Include="clKernel.h" />
-    <ClInclude Include="CLKernels.h" />
     <ClInclude Include="DED_Collect.h" />
     <ClInclude Include="DED_TiltCalibration.h" />
     <ClInclude Include="ExtraGatan.h" />
